@@ -1,0 +1,274 @@
+#include <math.h>
+#include <assert.h>
+#include <stdio.h>
+#include "brain.h"
+
+_Atomic uint32_t brain_innov_number = 0;
+_Atomic uint32_t brain_neuron_number = MAX_INPUT_NEURONS + MAX_OUTPUT_NEURONS;
+
+static hash_table64 links_hash;
+
+void brain_warmup()
+{
+	hash_table64_init(&links_hash); // TODO rendi parte di pool
+}
+
+/*
+INFORMAZIONI UTILI PER IL FUTURO
+1	INNOV NUMBER è numero unico per ogni mutazione genetica di aggiunta link, ogni
+	classe di link (links con stesso src e dst) hanno stesso innov_number.
+	viene usato per allineare i geni (link) simili durante il crossover e per
+	calcoare la distanza tra due braini (speciation).
+2	ogni NEURONE inteso come particolare neurone di partenza o arrivo da un
+	link con un certo innov_number ha un nome unico che pero è salvato solo
+	nei link a lui collegati (è il membro src o dst). inoltre se questo numero
+	indica anche il tipo di neurone (input output interno) (vedi MAX_INPUT_NEURONS, ..)
+3	il DIZIONARIO nel cervello serve a tradurre i nomi dei neuroni negli
+	indici della lista di accumulatori (che non esiste ma viene creata
+	ogni volta da brain_propagate).
+
+*/
+
+void print_brain (const brain_s *b)
+{
+	printf("\nBRAIN:\n");
+	printf("input size: %d, output size: %d\n", b->input_size, b->output_size);
+	printf("fitness: %f\n", b->fitness);
+	printf("hash entries: ");
+	for(size_t i = 0; i < b->dict.size; i++){
+		bucket *u = b->dict.table + i;
+		while(u){
+			for(size_t j = 0; j < BUCKET_SIZE; j++){
+				if(u->entries[j].used){
+					printf("(%d, %d) ", u->entries[j].key, u->entries[j].value);
+				}
+			}
+			u = u->next;
+		}
+	}
+	printf("\nlinks:\n");
+	print_links(b);
+
+}
+
+#define in_range(x, a, b) (x >= a && x <= b)
+
+int check_brain (const brain_s *b)
+{
+	int ok = 1;
+	ok *= in_range(b->input_size, 0, 10);
+	ok *= in_range(b->input_size, 0, 10);
+	//assert(b->fitness >= 0);
+	// controllo che il dict tenga i neuroni tutti vicini
+	//uint32_t value_should_be = 0;
+	uint32_t entries_number = 0;
+	for(size_t i = 0; i < b->dict.size; i++){
+		bucket *u = b->dict.table + i;
+		while(u){
+			for(size_t j = 0; j < BUCKET_SIZE; j++){
+				if(u->entries[j].used){
+					entries_number++;
+					// toppato perche non è detto che sono in ordine//ok *= (u->entries[j].value == value_should_be++);
+				}
+			}
+			u = u->next;
+		}
+	}
+	ok *= in_range(b->links.size, 0, 1000);
+	for (size_t  i = 0; i < b->links.size; i++){
+		const link_s l = b->links.data[i];
+		ok *= in_range(l.src, 0, 1000);
+		ok *= in_range(l.dst, 0, 1000);
+		ok *= in_range(l.dst_id, 0, entries_number);
+		ok *= in_range(l.src_id, 0, entries_number);
+		ok *= in_range(l.innov_number, 0, 1000000);
+		ok *= in_range(l.weight, -100, 100);
+	}
+	return ok;
+}
+#undef in_range
+
+void brain_init (brain_s *b, uint32_t in_count, uint32_t out_count)
+{
+	b->input_size = in_count;
+	b->output_size = out_count;
+	b->fitness = 0;
+	hash_table_init(&b->dict);
+	vector_link_s_construct(&b->links);
+
+	assert(in_count < MAX_INPUT_NEURONS);
+	assert(out_count < MAX_OUTPUT_NEURONS);
+
+	for (uint32_t i = 0; i < in_count; i++){
+		hash_table_insert_new(&b->dict, i, i);
+	}
+	for (uint32_t i = 0; i < out_count; i++){
+		hash_table_insert_new(&b->dict, MAX_INPUT_NEURONS + i, b->input_size + i);
+	}
+}
+
+void brain_free(brain_s *b)
+{
+	hash_table_free(&b->dict);
+	vector_link_s_free(&b->links);
+}
+
+static inline float sigmoid(float x)
+{
+	return x/(1 + fabs(x));
+}
+
+void brain_propagate (const brain_s *b, float *input, float *output)
+{
+	float *neurons = calloc(sizeof(float), b->dict.elements);
+	bool *cached = calloc(sizeof(bool), b->dict.elements);
+
+	assert(neurons);
+	assert(cached);
+
+	uint32_t count = 0;
+	for (size_t i = 0; i < b->input_size; i++){
+		//assert(b->links.data[i].src_id < b->input_size);
+		neurons[i] = input[i];
+	}
+
+	for (size_t  i = 0; i < b->links.size; i++){
+		const link_s l = b->links.data[i];
+		if (l.disabled)
+			continue;
+
+		if (!cached[l.src_id]){
+			cached[l.src_id] = true;
+			neurons[l.src_id] = sigmoid(neurons[l.src_id]);
+		}
+
+		neurons[l.dst_id] += l.weight * neurons[l.src_id];
+		count++;
+
+		for (size_t i = 0; i < b->output_size; i++){
+			output[i] = sigmoid(neurons[b->input_size + i]); // diverso dalla versione c++ che non sigmoida l'output
+		}
+	}
+
+	free(neurons);
+	free(cached);
+}
+
+bool brain_add_link_full (brain_s *b, uint32_t src, uint32_t dst, float weight, bool disabled) // ogni (o qualche) volta che returna 0 il programma aborta
+{
+	if (!check_brain(b)){
+		print_brain(b);
+		printf("weight: %f\n", weight);
+		assert(0);
+	}
+	size_t first_src = b->links.size; // prima volta che si legge da dst
+	bool found = false;
+	size_t last_dst = 0; // ultima volta che si scrive nel src
+	if (dst < b->input_size){
+		printf("input non validi: fallito add link\n");
+		assert(0);
+	}
+	if (src > MAX_INPUT_NEURONS && src < MAX_INPUT_NEURONS + b->output_size){
+		printf("input non validi: fallito add link\n");
+		return 0;
+	}
+
+	if (src == dst){
+		printf("src e dst uguali: fallito add link\n");
+		return 0;
+	}
+
+	for (size_t i = 0; i < b->links.size; i++) {
+		if (b->links.data[i].disabled)
+			continue;
+		if (b->links.data[i].dst == src)
+			last_dst = i + 1;
+		if (!found && b->links.data[i].src == dst){
+			first_src = i;
+			found = true;
+		}
+	}
+
+	if(first_src < last_dst){
+		printf("	non c'è posto dove inserire link\n");
+		return 0;
+	}
+
+	for (size_t i = 0; i < b->links.size; i++){
+		const link_s l = b->links.data[i];
+		if (l.src == src && l.dst == dst){
+			printf("	stai provando a aggiungere un link che gia esiste\n");
+			return 0;
+		}
+	}
+	link_s l;
+
+	l.src = src;
+
+	l.dst = dst;
+
+	l.disabled = disabled;
+
+	if (!hash_table64_search(&links_hash, make_key64(src, dst), &l.innov_number)){
+		l.innov_number = brain_innov_number++;
+		hash_table64_insert_new(&links_hash, make_key64(src, dst), l.innov_number);
+	}
+
+	l.weight = weight;
+
+	if(!hash_table_search(&(b->dict), src, NULL)) printf("searching %d not found\n", src);
+	assert(hash_table_search(&(b->dict), src, NULL));
+
+	if (!hash_table_search(&(b->dict), src, &l.src_id)){
+		hash_table_insert_new(&(b->dict), src, (uint32_t)b->dict.elements);
+	}
+	//l.src_id = dict[src];
+	int new_in_hash = 0;
+	if (!hash_table_search(&(b->dict), dst, &l.dst_id)){
+		l.dst_id = (uint32_t)b->dict.elements;
+		hash_table_insert_new(&(b->dict), dst, l.dst_id);
+	}
+	//assert(hash_table_search(&(b->dict), dst, NULL));
+
+	l.disabled = false;
+	size_t new_link_index = (first_src + last_dst) / 2;
+	//vector_link_s_insert(&b->links, links.begin() + new_link_index, l);
+
+	if(!(l.dst_id >= 0 && l.dst_id < 1000)){
+		printf("new in hash? %d\n", new_in_hash);
+		printf("dst_id = %d\n", l.dst_id);
+		assert(0);
+	}
+
+	vector_link_s_insert(&b->links, new_link_index, l);
+
+	if (!check_brain(b)){
+		print_brain(b);
+		assert(0);
+	}
+
+	return 1;
+}
+
+
+
+
+void brain_split_link (brain_s *b, uint32_t lnk) // ale dice che è buggata forse
+{
+	for (size_t i = 0; i < b->links.size; i++){
+		link_s *ln = &b->links.data[i]; //why was this const?
+		if(ln->innov_number == lnk) {
+			ln->disabled = true;
+			link_s l = *ln;
+			//why was this atomic?
+			uint32_t middle = brain_neuron_number++; //fetch_add might need the std macro
+			assert(b->dict.elements <= UINT32_MAX);
+			hash_table_insert(&b->dict, middle, (uint32_t)b->dict.elements);
+			brain_add_link(b, l.src, middle, l.weight);
+			brain_add_link(b, middle, l.dst, 1);
+			return;
+		}
+	}
+	printf("innovation number not found in links vector");
+	abort();
+}
