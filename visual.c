@@ -4,9 +4,15 @@
 #define neurons_spacing 54
 #define neuron_radius 14
 
-#define int_max(a,b) ((a) > (b) ? a : b)
-#define int_min(a,b) ((a) < (b) ? a : b)
+static inline int int_max(const int a, const int b)
+{
+	return (a > b) ? a : b;
+}
 
+static inline int int_min(const int a, const int b)
+{
+	return (a < b) ? a : b;
+}
 
 static inline float sigmoid(float x)
 {
