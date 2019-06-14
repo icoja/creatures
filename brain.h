@@ -42,6 +42,20 @@ struct brain{
 };
 typedef struct brain brain_s;
 
+
+enum brain_disorders {BRAIN_OK,
+	 	      INVALID_INPUT_SIZE,
+	      	      INVALID_OUTPUT_SIZE,
+		      INVALID_LINKS_NUMBER,
+		      SRC_TOO_BIG,
+		      DST_TOO_BIG,
+		      WEIGHT_TOO_BIG,
+		      INNOV_NUMBER_TOO_BIG,
+		      DST_ID_OUT_OF_BOUND,
+		      SRC_ID_OUT_OF_BOUND
+	      };
+
+
 void brain_warmup();
 void brain_free(brain_s *b);
 void brain_init (brain_s *b, uint32_t in_count, uint32_t out_count);
@@ -50,7 +64,7 @@ void brain_mutate ();
 void brain_split_link (brain_s *b, uint32_t l);
 bool brain_add_link_full (brain_s *b, uint32_t src, uint32_t dst, float weight, bool disabled);
 void print_brain (const brain_s *b);
-int check_brain (const brain_s *b);
+enum brain_disorders check_brain (const brain_s *b);
 
 static inline bool brain_add_link (brain_s *b, uint32_t src, uint32_t dst, float weight)
 {

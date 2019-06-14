@@ -13,18 +13,51 @@ static inline float test(const brain_s *b){
 	float output;
 	float fitness = 4;
 
-	brain_propagate(b, input, &output);
-
+	/*
 	for (size_t i = 0; i < 4; i++) {
 		input[0] = i % 2;
 		input[1] = i / 2;
+		//printf("input: %f %f\n", input[0], input[1]);
 		brain_propagate(b, input, &output);
-		fitness -= fabs(output - !!((int)input[0] ^ (int)input[1]));
+		fitness -= fabs((1 + output)/2 - !!((int)input[0] ^ (int)input[1]));
+		//printf("fitness after test with %f and %f: %f\n", input[0], input[1], fitness);
+
 	}
-	return fitness;
+	*/
+	brain_propagate(b, input, &output);
+	return 1.5 - fabs(output - 0.5);
 }
 
 int main()
+{
+	brain_warmup();
+	brain_mutations_warmup();
+
+	//sfContextSettings settings = {0};
+	//settings.antialiasingLevel = 8;
+	//sfRenderWindow *window = sfRenderWindow_create((sfVideoMode){900, 600, 32}, "creatures", sfResize | sfClose, &settings);
+
+	int pool_size = 100;
+
+	pool_s pool;
+	pool_init(&pool, pool_size);
+	for (int i = 0; i < pool_size; i++){
+		brain_s b;
+		brain_init(&b, 2, 1);
+		b.fitness = 0;
+		pool.brains[i] = b;
+
+	}
+
+	for (int i = 0; i < 2000; i++){
+		evolve(&pool, test);
+	}
+
+	print_pool(&pool);
+	return 0;
+}
+
+int main2()
 {
 	brain_warmup();
 	brain_mutations_warmup();
@@ -33,14 +66,14 @@ int main()
 	settings.antialiasingLevel = 8;
 	sfRenderWindow *window = sfRenderWindow_create((sfVideoMode){900, 600, 32}, "creatures", sfResize | sfClose, &settings);
 
-
-
 	pool_s pool;
-	pool_init(&pool, 100);
+	pool_init(&pool, 20);
 	for (int i = 0; i < 100; i++){
 		brain_s b;
 		brain_init(&b, 2, 1);
+		b.fitness = (float) i;
 		pool.brains[i] = b;
+
 	}
 
 	int i = 0;
@@ -121,7 +154,7 @@ int gmain()
 
 	brain_crossover(&b, &c);
 
-	for (size_t j = 0; j < 2000; j++) {
+	for (size_t j = 0; j < 1000; j++) {
 		brain_s b;
 		brain_init(&b, 3, 2);
 		for (size_t i = 0; i < 180; i++) {
@@ -136,7 +169,7 @@ int gmain()
 	}
 	sleep(200);
 	return 0;
-	int i = 0;
+	//int i = 0;
 	while (sfRenderWindow_isOpen(window))
 	{
 		sfEvent event;

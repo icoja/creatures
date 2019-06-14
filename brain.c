@@ -31,11 +31,11 @@ INFORMAZIONI UTILI PER IL FUTURO
 
 void print_brain (const brain_s *b)
 {
-	printf("\nBRAIN:\n");
+	printf("BRAIN:\n");
 	printf("input size: %d, output size: %d\n", b->input_size, b->output_size);
 	printf("fitness: %f\n", b->fitness);
 	printf("hash entries: ");
-	for(size_t i = 0; i < b->dict.size; i++){
+	for(size_t i = 0; i < b->dict.elements; i++){
 		bucket *u = b->dict.table + i;
 		while(u){
 			for(size_t j = 0; j < BUCKET_SIZE; j++){
@@ -53,16 +53,18 @@ void print_brain (const brain_s *b)
 
 #define in_range(x, a, b) (x >= a && x <= b)
 
-int check_brain (const brain_s *b)
+enum brain_disorders check_brain (const brain_s *b) // seg faulta
 {
-	int ok = 1;
-	ok *= in_range(b->input_size, 0, 10);
-	ok *= in_range(b->input_size, 0, 10);
+	if (b->input_size > 10) return INVALID_INPUT_SIZE;
+	if (b->input_size > 10) return INVALID_OUTPUT_SIZE;
 	//assert(b->fitness >= 0);
 	// controllo che il dict tenga i neuroni tutti vicini
 	//uint32_t value_should_be = 0;
-	uint32_t entries_number = 0;
-	for(size_t i = 0; i < b->dict.size; i++){
+	uint32_t entries_number = b->dict.elements;
+	/*  qui seg faulta TODO
+	printf("inizializato check\n");
+	printf("dict size: %d\n", b->dict.elements);
+	for(size_t i = 0; i < b->dict.elements; i++){
 		bucket *u = b->dict.table + i;
 		while(u){
 			for(size_t j = 0; j < BUCKET_SIZE; j++){
@@ -74,17 +76,20 @@ int check_brain (const brain_s *b)
 			u = u->next;
 		}
 	}
-	ok *= in_range(b->links.size, 0, 1000);
-	for (size_t  i = 0; i < b->links.size; i++){
+	printf("checkato dizionario\n");
+	*/
+
+	if (b->links.size > 1000) return INVALID_LINKS_NUMBER;
+	for (size_t i = 0; i < b->links.size; i++){
 		const link_s l = b->links.data[i];
-		ok *= in_range(l.src, 0, 1000);
-		ok *= in_range(l.dst, 0, 1000);
-		ok *= in_range(l.dst_id, 0, entries_number);
-		ok *= in_range(l.src_id, 0, entries_number);
-		ok *= in_range(l.innov_number, 0, 1000000);
-		ok *= in_range(l.weight, -100, 100);
+		if (l.src > 1000000) return SRC_TOO_BIG;
+		if (l.dst > 1000000) return DST_TOO_BIG;
+		if (l.dst_id > entries_number) return DST_ID_OUT_OF_BOUND;
+		if (l.src_id > entries_number) return SRC_ID_OUT_OF_BOUND;
+		if (l.innov_number > 1000000) return INNOV_NUMBER_TOO_BIG;
+		if (!in_range(l.weight, -100, 100)) return WEIGHT_TOO_BIG;
 	}
-	return ok;
+	return BRAIN_OK;
 }
 #undef in_range
 
@@ -126,28 +131,35 @@ void brain_propagate (const brain_s *b, float *input, float *output)
 	assert(neurons);
 	assert(cached);
 
-	uint32_t count = 0;
+	// carica l'input nei neuroni di input
 	for (size_t i = 0; i < b->input_size; i++){
 		//assert(b->links.data[i].src_id < b->input_size);
 		neurons[i] = input[i];
 	}
 
+	// propaga (assumendo l'ordinamento dei links)
+	uint32_t count = 0; // a che serve??
+	// per ogni link
 	for (size_t  i = 0; i < b->links.size; i++){
 		const link_s l = b->links.data[i];
-		if (l.disabled)
-			continue;
-
+		// ignora se diablato
+		if (l.disabled) continue;
+		// se il source non è mai stato usato, quindi non gli è stata ancora applicata la sigmoide
 		if (!cached[l.src_id]){
 			cached[l.src_id] = true;
 			neurons[l.src_id] = sigmoid(neurons[l.src_id]);
 		}
 
 		neurons[l.dst_id] += l.weight * neurons[l.src_id];
-		count++;
+		count++; // a che serve ??
 
-		for (size_t i = 0; i < b->output_size; i++){
-			output[i] = sigmoid(neurons[b->input_size + i]); // diverso dalla versione c++ che non sigmoida l'output
-		}
+	}
+	// gli output non essendo source di nessun neurone sicuramente non sono stati sigmoidati + carica i valori finali nell'array "output":
+	for (size_t i = 0; i < b->output_size; i++){
+		// per convenzione i neuroni di output sono quelli subito dopo i neuroni di input: quindi da input_size a input_size + output_size
+		float res = sigmoid(neurons[b->input_size + i]);
+		assert(!isnan(res));
+		output[i] = res; // diverso dalla versione c++ che non sigmoida l'output
 	}
 
 	free(neurons);
@@ -156,9 +168,8 @@ void brain_propagate (const brain_s *b, float *input, float *output)
 
 bool brain_add_link_full (brain_s *b, uint32_t src, uint32_t dst, float weight, bool disabled) // ogni (o qualche) volta che returna 0 il programma aborta
 {
-	if (!check_brain(b)){
+	if (check_brain(b) != BRAIN_OK){
 		print_brain(b);
-		printf("weight: %f\n", weight);
 		assert(0);
 	}
 	size_t first_src = b->links.size; // prima volta che si legge da dst
@@ -234,7 +245,7 @@ bool brain_add_link_full (brain_s *b, uint32_t src, uint32_t dst, float weight, 
 	size_t new_link_index = (first_src + last_dst) / 2;
 	//vector_link_s_insert(&b->links, links.begin() + new_link_index, l);
 
-	if(!(l.dst_id >= 0 && l.dst_id < 1000)){
+	if(l.dst_id > 1000){
 		printf("new in hash? %d\n", new_in_hash);
 		printf("dst_id = %d\n", l.dst_id);
 		assert(0);
@@ -242,7 +253,8 @@ bool brain_add_link_full (brain_s *b, uint32_t src, uint32_t dst, float weight, 
 
 	vector_link_s_insert(&b->links, new_link_index, l);
 
-	if (!check_brain(b)){
+	if (check_brain(b) != BRAIN_OK){
+		printf("brain sbagliato: errore %d\n", check_brain(b));
 		print_brain(b);
 		assert(0);
 	}

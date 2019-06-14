@@ -23,7 +23,10 @@ void pool_free(pool_s* pool)
 static void evaluate_fitness(pool_s *pool, float (*test)(const brain_s*))
 {
 	for (size_t i = 0; i < pool->size; i++){
-		pool->brains[i].fitness = test(pool->brains + i);
+		printf("brain %zu has fitness %f\n", i, test(pool->brains + i));
+		float fitness = test(pool->brains + i);
+		assert(fitness >= 0 && fitness < 1000000000);
+		pool->brains[i].fitness = fitness;
 	}
 
 }
@@ -110,7 +113,7 @@ static float brain_dist(const brain_s *b, const brain_s *c){
 #define species(i, j) species.data[i * (pool->size + 1) + j]
 static void speciation(pool_s *pool)
 {
-	const float dist_threshold = 0.5;
+	// imponi 0 elementi ogni specie
 	for (uint16_t i = 0; i < n_species(pool); i++){
 		pool->species(i, 0) = 0;
 	}
@@ -120,7 +123,7 @@ static void speciation(pool_s *pool)
 		for (j = 0; j < n_species(pool); j++){
 			float dist = brain_dist(&pool->brains[i], &pool->brains[pool->species(j, 1)]);
 			//printf("distanza tra %d e specie %d = %f\n", i, j, dist);
-			if (dist <= dist_threshold || pool->species(j, 0) == 0){
+			if (pool->species(j, 0) == 0 || dist <= dist_threshold){
 				pool->species(j, ++pool->species(j, 0)) = i;
 				needs_realloc = false;
 				break;
@@ -135,40 +138,92 @@ static void speciation(pool_s *pool)
 		}
 
 	}
-
 }
 
 
+void print_species(pool_s *pool)
+{
+	printf("species: ci sono %d specie\n", n_species(pool));
+	for (int i = 0; i < n_species(pool); i++){
+		printf("specie %d: ", i);
 
-void reproduction(pool_s *pool)
+		for (int j = 0; j < pool->size + 1; j++){
+			printf("%d ", pool->species(i, j));
+		}
+
+		printf("\n");
+	}
+}
+
+static void remove_k_least_fit (const brain_s *brains, uint16_t *specie, uint32_t k)
+{
+	for (uint32_t c = 0; c < k; c++){ // per ogni elemento da rimuovere
+		assert(specie[0]); // la specie ha almeno un elemento (ne sta per rimuovere uno)
+		uint32_t least_fit = 1;
+		for (uint32_t i = 1; i <= specie[0]; i++){ // per ogni elemento della specie
+			assert(i <= specie[0]);
+			assert(least_fit <= specie[0]);
+			assert(specie[least_fit] >= 0 && specie[least_fit] < 10000);
+			if (brains[specie[i]].fitness < brains[specie[least_fit]].fitness){
+				least_fit = i;
+			}
+		}
+		assert(brains[specie[least_fit]].fitness <= brains[specie[specie[0]]].fitness);
+			//printf("penso che il least fit sia l'elemento %d della specie, questo ha fitness %f mentre l'ultimo elemento della specie (%d) ha fitness %f\n", least_fit, brains[specie[least_fit]].fitness, specie[0], brains[specie[specie[0]]].fitness);
+
+		// scambio lultimo elemento della specie con il less fit
+		uint16_t t = specie[specie[0]];
+		specie[specie[0]] = specie[least_fit];
+		specie[least_fit] = t;
+		// -1 al numero di elementi dell specie (cosi il least fit che sta alla fine viene escluso)
+		specie[0]--;
+	}
+}
+
+void reproduction(pool_s *pool) // TODO seg faulta
 {
 	brain_s *new_brains = calloc(sizeof(brain_s), pool->size);
 	float *avg = calloc(sizeof(float), n_species(pool));
 	float sum_avg = 0;
-	for (uint16_t j = 0; j < n_species(pool); j++){
-		if (pool->species(j, 0) == 0) break;
+	print_species(pool);
+	uint16_t j;
+	for (j = 0; j < n_species(pool); j++){
+		if (pool->species(j, 0) == 0) break; // la specie j è vuota
+		remove_k_least_fit(pool->brains, &pool->species(j,0), pool->species(j, 0) * remove_bottom_perc);
 		for (uint16_t i = 0; i < pool->species(j, 0); i++){
 			avg[j] += pool->brains[pool->species(j, i + 1)].fitness;
 		}
+		assert(pool->species(j, 0)); // la specie j ha almeno  1 elemento
 		avg[j] /= pool->species(j, 0);
 		sum_avg += avg[j];
+		printf("la specie %d ha %d elementi e avj %f\n", j, pool->species(j, 0), avg[j]);
 	}
+	uint16_t non_empty_species = j;
 
 	uint16_t i = 0;
 	uint16_t deficit = pool->size; //number brains to add
-	for (uint16_t j = 0; j < n_species(pool); j++){
-		assert(sum_avg); // non dovrebbe essere un assert, dovrebbe handlare il caso
+	printf("devo aggiugere %d braini\n", deficit);
+	for (uint16_t j = 0; j < non_empty_species; j++){
+		assert(sum_avg); // TODO non dovrebbe essere un assert, dovrebbe handlare il caso
 		uint16_t offspring = pool->size / sum_avg * avg[j];
-		deficit -= offspring;
+		printf("per la specie %d ne aggiungo %d\n", j, offspring);
+		if (pool->species(j, 0) == 0) printf("la specie %d è vuota\n", j);
 		for (uint16_t o = 0; o < offspring; o++){
-			int father = pcg32_random_r(&rng) % pool->species(j, 0);
-			int mother = pcg32_random_r(&rng) % pool->species(j, 0);
-			brain_s son = brain_crossover(&pool->brains[father], &pool->brains[mother]);
+			int father = 1 + pcg32_random_r(&rng) % pool->species(j, 0);
+			if (o == 1){
+				printf("random brain dalla specie %d:\n", j);
+				print_brain(&pool->brains[pool->species(j, father)]);
+			}
+			int mother = 1 + pcg32_random_r(&rng) % pool->species(j, 0);
+			brain_s son = brain_crossover(&pool->brains[pool->species(j, father)], &pool->brains[pool->species(j, mother)]);
 			brain_mutate(&son);
+			assert(i < pool->size);
 			new_brains[i++] = son;
+			deficit--;
 
 		}
 	}
+
 
 	// assert(deficit <= n_species(pool)); // perche??
 	for (uint16_t o = 0; o < deficit; o++) {
@@ -179,7 +234,10 @@ void reproduction(pool_s *pool)
 		new_brains[i++] = son;
 	}
 
-	assert(i == pool->size);
+
+
+	//assert(i == pool->size);
+
 	for (size_t i = 0; i < pool->size; i++) {
 		brain_free(&pool->brains[i]);
 	}
@@ -188,15 +246,23 @@ void reproduction(pool_s *pool)
 	pool->brains = new_brains;
 }
 
+void print_pool(const pool_s *pool)
+{
+	print_species(pool);
+}
 #undef species
 
 
 void evolve(pool_s *pool, float (*test)(const brain_s*))
 {
+	printf("%s\n", "-----------inizio evoluzione-------------");
+	printf("%s\n", "---------calcolo fitness");
 	evaluate_fitness(pool, test);
+	printf("%s\n", "---------specio");
 	speciation(pool);
+	printf("%s\n", "---------riproduzione");
 	reproduction(pool);
-
+	printf("%s\n", "--------------fime evoluzione---------------");
 }
 
 

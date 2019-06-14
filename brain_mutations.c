@@ -13,14 +13,14 @@ void brain_mutations_warmup()
 
 void brain_mutate (brain_s *b)
 {
-	assert(check_brain(b));
+	assert(check_brain(b) == BRAIN_OK);
 
 	// non cambiare l'ordine di esecuzione delle mutazioni (anche se comunque non è troppo grave)
 	float remove_neuron_prob = 0; // n * 4o
 	float split_link_prob = 0.001;
-	float remove_link_prob = 0.0; // mmh meglio non usare
+	float remove_link_prob = 0.01; // mmh meglio non usare
 	float add_link_prob = 0.01;
-	float weight_mut_prob = 0.1;
+	float weight_mut_prob = 0.2;
 
 	float weight_mut_range = 1;
 
@@ -52,7 +52,7 @@ void brain_mutate (brain_s *b)
 	interval_start += remove_link_prob;
 
 	// add link mutation
-	assert(check_brain(b));
+	assert(check_brain(b) == BRAIN_OK);
 	interval_end += add_link_prob;
 	if (which_mutation_rand > interval_start && which_mutation_rand < interval_end){
 		uint32_t src_index = pcg32_random_r(&rng) % (b->dict.elements - b->output_size); // circa uniformemente distribuita tra 0 e #neuroni possibili (ovvviamente il src non puo indicare un neurone output)
@@ -78,9 +78,9 @@ void brain_mutate (brain_s *b)
 		assert(src_key + 1);
 		assert(dst_key + 1);
 		//printf("adding random link btween: %d and %d\n", src_key, dst_key);
-		brain_add_link(b, src_key, dst_key, 9.99); // weight a 0 per minimizzare il disturbo
+		brain_add_link(b, src_key, dst_key, 0); // weight a 0 per minimizzare il disturbo
 
-		assert(check_brain(b));
+		assert(check_brain(b) == BRAIN_OK);
 		//brain_add_link(b, src_index, dst_index, 0);
 	}
 	interval_start += add_link_prob;
@@ -96,7 +96,7 @@ void brain_mutate (brain_s *b)
 	}
 	interval_start += weight_mut_prob;
 
-	assert(check_brain(b));
+	assert(check_brain(b) == BRAIN_OK);
 }
 
 static inline void swap(link_s *a, link_s *b){link_s tmp = *a; *a = *b; *b = tmp;}
@@ -132,13 +132,13 @@ static void quick_sort_links(vector_link_s *A)
 
 brain_s brain_crossover(const brain_s *mother, const brain_s *father)
 {
-	assert(check_brain(mother));
-	assert(check_brain(father));
+	assert(check_brain(mother) == BRAIN_OK);
+	assert(check_brain(father) == BRAIN_OK);
 
 	const brain_s *fittest = (mother->fitness > father->fitness) ? mother : father;
 	const brain_s *lessfit = (mother->fitness <= father->fitness) ? mother : father;
 
-	vector_link_s fittest_links = vector_link_s_copy(&(fittest->links)); // con o senza * ??
+	vector_link_s fittest_links = vector_link_s_copy(&(fittest->links));
 	vector_link_s lessfit_links = vector_link_s_copy(&(lessfit->links));
 
 	quick_sort_links(&fittest_links);
@@ -148,6 +148,7 @@ brain_s brain_crossover(const brain_s *mother, const brain_s *father)
 	brain_s new_brain;
 	brain_init(&new_brain, fittest->input_size, fittest->output_size);
 
+
 	size_t j = 0; // indice del less fit
 	for (size_t i = 0; i < fittest_links.size; i++){ // i indice del fittest
 		link_s current_fittest = fittest_links.data[i];
@@ -155,8 +156,7 @@ brain_s brain_crossover(const brain_s *mother, const brain_s *father)
 
 		// (1) i link che ha il lessfit e il fittest no vengono ignorati
 		while (current_lessfit.innov_number < current_fittest.innov_number && j < lessfit_links.size){
-			j++;
-			current_lessfit = lessfit_links.data[j];
+			current_lessfit = lessfit_links.data[j++];
 		}
 
 		// (2) quelli che tutti e due hanno vengono scelti a caso
@@ -168,27 +168,29 @@ brain_s brain_crossover(const brain_s *mother, const brain_s *father)
 			// TODO check that unsigned int is the proper typing (later this value is compared with an uint32_t)
 			unsigned int disabled_prob = (current_lessfit.disabled * UINT32_MAX / 2 +
 				current_fittest.disabled * UINT32_MAX / 2);
-				bool shoud_be_disabled = pcg32_random_r(&rng) < disabled_prob;
-				brain_add_link_full(&new_brain, current_fittest.src, current_fittest.dst, new_weight, shoud_be_disabled); // perche & ?? (anche nella linea del else) // un po inefficente forse visto che il link gia esiste fatto
+			bool shoud_be_disabled = pcg32_random_r(&rng) < disabled_prob;
+			brain_add_link_full(&new_brain, current_fittest.src, current_fittest.dst, new_weight, shoud_be_disabled); // perche & ?? (anche nella linea del else) // un po inefficente forse visto che il link gia esiste fatto
 
 
-				// (3) quelli che ha solo il fittest vengono preservati
-			} else{
-				brain_add_link(&new_brain, current_fittest.src, current_fittest.dst, current_fittest.weight); // un po inefficente forse visto che il link gia esiste fatto
-			}
+			// (3) quelli che ha solo il fittest vengono preservati
+		} else{
+			brain_add_link(&new_brain, current_fittest.src, current_fittest.dst, current_fittest.weight); // un po inefficente forse visto che il link gia esiste fatto
 		}
-
-		//print_links(&new_brain);
-
-		// free vectors
-		vector_link_s_free(&fittest_links);
-		vector_link_s_free(&lessfit_links);
-
-
-		if (!check_brain(&new_brain)){
-			print_brain(&new_brain);
-			assert(0);
-		}
-
-		return new_brain;
 	}
+
+
+	//print_links(&new_brain);
+
+	// free vectors
+	vector_link_s_free(&fittest_links);
+	vector_link_s_free(&lessfit_links);
+
+
+	if (check_brain(&new_brain) != BRAIN_OK){
+		print_brain(&new_brain);
+		assert(0);
+	}
+
+
+	return new_brain;
+}

@@ -19,13 +19,6 @@ static inline float sigmoid(float x)
 	return x/(1 + fabs(x));
 }
 
-static inline int sign(float x)
-{
-	if (x > 0) return 1;
-	if (x < 0) return -1;
-	return 0;
-}
-
 struct vis_neuron{
 	uint32_t inn;
 	int layer;
@@ -135,7 +128,7 @@ void set_x(brain_s *b, vis_neuron_s *neurons, uint32_t neurons_number, float max
 	}
 	for (size_t i = 0; i < neurons_number; i++){
 		if (neurons[i].layer == -1){
-			printf("il neurone %d non è stato assegnato un layer\n", i);
+			printf("il neurone %zu non è stato assegnato un layer\n", i);
 			neurons[i].layer = max_layer-1;
 		}
 		// assert(neurons[i].layer != -1); potrebbero essere tutti disabled
@@ -163,7 +156,7 @@ float equal_space(uint32_t items, uint32_t which, float dist, float center)
 {
 	// calcola la posizione di "items" oggetti che si trovano allineati e equamente distanziati (dist) intorno a un centro
 	// which indica di quale oggetto della riga si deve calcolare la posizione (per esempio se item è 6 wich deve essere un intero tra 0 e 5)
-	assert(which >= 0 && which < items);
+	assert(which < items);
 	float offset = (items - 1) * dist / 2;
 	return which * dist - offset + center;
 }
