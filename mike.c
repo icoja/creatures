@@ -5,22 +5,6 @@
 
 #define MIKE_COLLISION_GROUP 16
 
-//mike specific shape is hard coded
-static const float upper_leg_length = 40;
-static const float upper_leg_thickness = 3;
-static const float lower_leg_length = 40;
-static const float lower_leg_thickness = 3;
-static const float head_radius = 10;
-static const float upper_leg_density = 0.1;
-static const float lower_leg_density = 0.1;
-static const float head_density = 0.1;
-static const float friction = 0.8;
-static const float bounciness = 0.1;
-static const float upper_joint_stiffness = 18000;
-static const float lower_joint_stiffness = 18000;
-static const float upper_joint_damping = 60000;
-static const float lower_joint_damping = 60000;
-
 
 
 void mike_init(mike_s *m)
