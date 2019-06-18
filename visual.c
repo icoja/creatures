@@ -333,3 +333,36 @@ void brain_display(brain_s *b, sfRenderWindow *window, int use_values, float *va
 
 	free(neurons);
 }
+
+void draw_mike(sfRenderWindow *window, mike_s *m, double target)
+{
+	sfCircleShape *head = sfCircleShape_create();
+	sfCircleShape_setRadius(head, head_radius);
+	sfCircleShape_setOrigin(head, (sfVector2f){head_radius, head_radius});
+	sfCircleShape_setPosition(head, (sfVector2f){cpBodyGetPosition(m->head).x, cpBodyGetPosition(m->head).y});
+	//head.setPosition(cpBodyGetPosition(m.head).x, cpBodyGetPosition(m.head).y);
+	//window.draw(head);
+	sfRenderWindow_drawCircleShape(window, head, NULL);
+	// debug target loc
+	sfRectangleShape *upper_leg = sfRectangleShape_create();
+	sfRectangleShape *lower_leg = sfRectangleShape_create();
+	sfRectangleShape_setSize(upper_leg, (sfVector2f){upper_leg_thickness, upper_leg_length});
+	sfRectangleShape_setSize(lower_leg, (sfVector2f){lower_leg_thickness, lower_leg_length});
+	sfRectangleShape_setOrigin(upper_leg, (sfVector2f){upper_leg_thickness/2., upper_leg_length/2.});
+	sfRectangleShape_setOrigin(lower_leg, (sfVector2f){lower_leg_thickness/2., lower_leg_length/2.});
+	sfRectangleShape_setPosition(upper_leg, (sfVector2f){cpBodyGetPosition(m->l).x, cpBodyGetPosition(m->l).y});
+	sfRectangleShape_setPosition(lower_leg, (sfVector2f){cpBodyGetPosition(m->ll).x, cpBodyGetPosition(m->ll).y});
+
+	sfRectangleShape_setRotation(upper_leg, cpBodyGetAngle(m->l) / (2 * CP_PI) * 360);
+	sfRectangleShape_setRotation(lower_leg, cpBodyGetAngle(m->ll) / (2 * CP_PI) * 360);
+
+	sfRenderWindow_drawRectangleShape(window, upper_leg, NULL);
+	sfRenderWindow_drawRectangleShape(window, lower_leg, NULL);
+
+	sfRectangleShape_setPosition(upper_leg, (sfVector2f){cpBodyGetPosition(m->r).x, cpBodyGetPosition(m->r).y});
+	sfRectangleShape_setPosition(lower_leg, (sfVector2f){cpBodyGetPosition(m->rr).x, cpBodyGetPosition(m->rr).y});
+	sfRectangleShape_setRotation(upper_leg, cpBodyGetAngle(m->r) / (2 * CP_PI) * 360);
+	sfRectangleShape_setRotation(lower_leg, cpBodyGetAngle(m->rr) / (2 * CP_PI) * 360);
+	sfRenderWindow_drawRectangleShape(window, upper_leg, NULL);
+	sfRenderWindow_drawRectangleShape(window, lower_leg, NULL);
+}

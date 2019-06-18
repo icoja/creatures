@@ -1,5 +1,25 @@
 #include <chipmunk/chipmunk.h>
 
+/*
+mike body constants
+these constants pollute the main namespace. they should be isolated somehow (separate header)
+as they are also needed in visual.c for mike's visualization
+*/
+static const float upper_leg_length = 40;
+static const float upper_leg_thickness = 3;
+static const float lower_leg_length = 40;
+static const float lower_leg_thickness = 3;
+static const float head_radius = 10;
+static const float upper_leg_density = 0.1;
+static const float lower_leg_density = 0.1;
+static const float head_density = 0.1;
+static const float friction = 0.8;
+static const float bounciness = 0.1;
+static const float upper_joint_stiffness = 18000;
+static const float lower_joint_stiffness = 18000;
+static const float upper_joint_damping = 60000;
+static const float lower_joint_damping = 60000;
+
 typedef struct mike{
 	cpBody *head, *l, *r, *ll, *rr;
 	cpShape *head_s, *l_s, *r_s, *ll_s, *rr_s;
@@ -21,33 +41,3 @@ void mike_brain_inputs(mike_s *m, double *output);
 void mike_muscle_input(mike_s *m, double *input);
 //places mike in a still standing position at coordinates x,y
 void mike_reset(mike_s *m, double x, double y);
-
-/*
-void draw_mike(sf::RenderWindow &window, Mike &m, double target)
-{
-	sf::CircleShape head {(float)m.head_radius};
-	head.setOrigin(m.head_radius, m.head_radius);
-	head.setPosition(cpBodyGetPosition(m.head).x, cpBodyGetPosition(m.head).y);
-	window.draw(head);
-	// debug target loc
-	head = sf::CircleShape {3};
-	head.setPosition(target, 100);
-	window.draw(head);
-	//
-	sf::RectangleShape upper_leg {sf::Vector2f{(float)m.upper_leg_thickness, (float)m.upper_leg_length}};
-	sf::RectangleShape lower_leg {sf::Vector2f{(float)m.lower_leg_thickness, (float)m.lower_leg_length}};
-	upper_leg.setOrigin(m.upper_leg_thickness/2., m.upper_leg_length/2.);
-	lower_leg.setOrigin(m.lower_leg_thickness/2., m.lower_leg_length/2.);
-	upper_leg.setPosition(cpBodyGetPosition(m.l).x, cpBodyGetPosition(m.l).y);
-	lower_leg.setPosition(cpBodyGetPosition(m.ll).x, cpBodyGetPosition(m.ll).y);
-	upper_leg.setRotation(cpBodyGetAngle(m.l) / (2 * M_PI) * 360);
-	lower_leg.setRotation(cpBodyGetAngle(m.ll) / (2 * M_PI) * 360);
-	window.draw(upper_leg);
-	window.draw(lower_leg);
-	upper_leg.setPosition(cpBodyGetPosition(m.r).x, cpBodyGetPosition(m.r).y);
-	lower_leg.setPosition(cpBodyGetPosition(m.rr).x, cpBodyGetPosition(m.rr).y);
-	upper_leg.setRotation(cpBodyGetAngle(m.r) / (2 * M_PI) * 360);
-	lower_leg.setRotation(cpBodyGetAngle(m.rr) / (2 * M_PI) * 360);
-	window.draw(upper_leg);
-	window.draw(lower_leg);
-}*/
