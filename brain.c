@@ -207,11 +207,11 @@ void brain_propagate_vis (const brain_s *b, float *input, float *output, float *
 		output[i] = res; // diverso dalla versione c++ che non sigmoida l'output
 	}
 	////////////////////////// unica differenza con brain_propagate qui ////////////
-	for (size_t i = 0; i < b->dict.elements; i++){
+	for (size_t i = 0; i < b->dict.elements || i < 100000; i++){
 		acc[i] = neurons[i];
 	}
 	////////////////////////////////////////////////////////////////////////
-	
+
 	free(neurons);
 	free(cached);
 }

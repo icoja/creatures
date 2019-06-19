@@ -17,10 +17,10 @@ void brain_mutate (brain_s *b)
 
 	// non cambiare l'ordine di esecuzione delle mutazioni (anche se comunque non è troppo grave)
 	float remove_neuron_prob = 0; // n * 4o
-	float split_link_prob = 0.03;
-	float remove_link_prob = 0.03; // mmh meglio non usare
-	float add_link_prob = 0.05;
-	float weight_mut_prob = 0.3;
+	float split_link_prob = 0.004;
+	float remove_link_prob = 0.02; // mmh meglio non usare
+	float add_link_prob = 0.02;
+	float weight_mut_prob = 0.6;
 
 	float weight_mut_range = 1;
 
@@ -132,7 +132,7 @@ static void quick_sort_links(vector_link_s *A)
 
 brain_s brain_crossover(const brain_s *mother, const brain_s *father)
 {
-	if (!check_brain(mother) == BRAIN_OK){
+	if (!(check_brain(mother) == BRAIN_OK)){
 		printf("error n: %d\n", check_brain(mother));
 		print_brain(mother);
 		assert(0);

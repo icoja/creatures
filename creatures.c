@@ -52,16 +52,12 @@ float test(const brain_s *b){
 
 
 
-	cpFloat timeStep = 1.0/30.0;
+	cpFloat timeStep = 1.0/20.0;
 	//printf("test begin\n");
 	for(cpFloat time = 0; time < 4; time += timeStep){
 
 		mike_brain_inputs(&mike, input);
-		//printf("    input:");
-		for (int i = 0; i < 12; i++) //printf(" %f", input[i]);
 		brain_propagate(b, input, output);
-		//printf("\n    output:");
-		for (int i = 0; i < 4; i++) //printf(" %f", output[i]);
 		mike_muscle_input(&mike, output);
 
 		//printf("\n    current head height: %f\n", cpBodyGetPosition(mike.head).y);
@@ -176,7 +172,7 @@ int main()
 	}
 
 	int i = 0;
-	int gen_numb = 10000000000;
+	int gen_numb = 10000000;
 	while (sfRenderWindow_isOpen(window))
 	{
 		sfEvent event;
@@ -188,11 +184,11 @@ int main()
 		sfRenderWindow_clear(window, sfBlack);
 
 		if (i < gen_numb){
+			brain_s best;
 			evolve(&pool, test);
-			printf("gen numb: %d, fitenss: %f\n", i, test(&pool.brains[0]));
-
-			if (i%50 == 0){
-
+			printf("gen numb: %d", i);
+			int show_every = 250;
+			if (i%show_every == (show_every - 1)){
 				cpVect gravity = cpv(0, -100);
 				cpSpace *space = cpSpaceNew();
 				cpSpaceSetGravity(space, gravity);
@@ -202,25 +198,29 @@ int main()
 				mike_s mike;
 				mike_init(&mike);
 				mike_spawn(&mike, space, 400, 75);
-				brain_s b = pool.brains[0];
-				cpFloat timeStep = 1.0/60.0;
+				brain_s b = pool.brains[33];
+				cpFloat timeStep = 1.0/20.0;
 				float input[12];
 				float output[4];
-				assert(b.dict.elements < 1000);
-				float vis[1000]; // max number of neurons
+				float vis[100000]; // max number of neurons
 
-				for(cpFloat time = 0; time < 2; time += timeStep){
+				for(cpFloat time = 0; time < 4; time += timeStep){
 					sfRenderWindow_clear(window, sfBlack);
 					mike_brain_inputs(&mike, input);
+					assert(b.dict.elements < 100000);
 					brain_propagate_vis(&b, input, output, vis);
 					mike_muscle_input(&mike, output);
 					cpSpaceStep(space, timeStep);
 					draw_mike(window, &mike);
+					//printf("prima di chiamare brain display\n");
 					brain_display(&b, window, 1, vis);
+					//printf("dopo di chiamare brain display\n");
 					sfRenderWindow_display(window);
 				}
+
 				mike_free(&mike);
 				cpShapeFree(ground);
+
 			}
 			// sleep(1);
 		} else if (i == gen_numb) {

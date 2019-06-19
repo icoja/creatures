@@ -22,12 +22,24 @@ void pool_free(pool_s* pool)
 
 static void evaluate_fitness(pool_s *pool, float (*test)(const brain_s*))
 {
+	float max_fitness = 0;
+	uint32_t best_indx = 0;
+	float avj_fitness = 0;
+	#pragma omp parallel for
 	for (size_t i = 0; i < pool->size; i++){
 		//printf("brain %zu has fitness %f\n", i, test(pool->brains + i));
 		float fitness = test(pool->brains + i);
-		assert(fitness >= 0 && fitness < 1000000000);
+		assert(fitness >= 0 && fitness < 1000000);
 		pool->brains[i].fitness = fitness;
+
+		if (fitness >= max_fitness){
+			max_fitness = fitness;
+			best_indx = i;
+		}
+		avj_fitness += fitness;
 	}
+	avj_fitness /= pool->size;
+	printf("max fitness: %f, avj: %f\n", max_fitness, avj_fitness);
 
 }
 
@@ -185,7 +197,7 @@ void reproduction(pool_s *pool) // TODO seg faulta
 	brain_s *new_brains = calloc(sizeof(brain_s), pool->size);
 	float *avg = calloc(sizeof(float), n_species(pool));
 	float sum_avg = 0;
-	print_species(pool);
+	//print_species(pool);
 	uint16_t j;
 	for (j = 0; j < n_species(pool); j++){
 		if (pool->species(j, 0) == 0) break; // la specie j è vuota
@@ -199,6 +211,7 @@ void reproduction(pool_s *pool) // TODO seg faulta
 		//printf("la specie %d ha %d elementi e avj %f\n", j, pool->species(j, 0), avg[j]);
 	}
 	uint16_t non_empty_species = j;
+	printf("ci sono %d specie\n", non_empty_species);
 
 	uint16_t i = 0;
 	uint16_t deficit = pool->size; //number brains to add
@@ -255,14 +268,14 @@ void print_pool(const pool_s *pool)
 
 void evolve(pool_s *pool, float (*test)(const brain_s*))
 {
-	printf("%s\n", "-----------inizio evoluzione-------------");
-	printf("%s\n", "---------calcolo fitness");
+	//printf("%s\n", "-----------inizio evoluzione-------------");
+	//printf("%s\n", "---------calcolo fitness");
 	evaluate_fitness(pool, test);
-	printf("%s\n", "---------specio");
+	//printf("%s\n", "---------specio");
 	speciation(pool);
-	printf("%s\n", "---------riproduzione");
+	//printf("%s\n", "---------riproduzione");
 	reproduction(pool);
-	printf("%s\n", "--------------fime evoluzione---------------");
+	//printf("%s\n", "--------------fime evoluzione---------------");
 }
 
 

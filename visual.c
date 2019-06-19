@@ -223,13 +223,17 @@ void dyn_adjust(brain_s *b, vis_neuron_s *neurons, uint32_t neurons_number)
 					ix *= -1;
 					iy *= -1;
 				}
-				neurons[j].x += ix;
-				neurons[j].y += iy;
-				neurons[i].x -= ix;
-				neurons[i].y -= iy;
+				if (i > b->input_size + b->output_size){
+					neurons[i].x += ix;
+					neurons[i].y += iy;
+				}
+				if (i > b->input_size + b->output_size){
+					neurons[i].x -= ix;
+					neurons[i].y -= iy;
+				}
 
-				dx = neurons[i].x - neurons[j].x;
-				dy = neurons[i].y - neurons[j].y;
+				//dx = neurons[i].x - neurons[j].x;
+				//dy = neurons[i].y - neurons[j].y;
 			}
 		}
 		for (size_t i = 0; i < b->links.size; i++){
@@ -243,13 +247,16 @@ void dyn_adjust(brain_s *b, vis_neuron_s *neurons, uint32_t neurons_number)
 				ix *= -1;
 				iy *= -1;
 			}
-			neurons[l.src_id].x += ix;
-			neurons[l.src_id].y += iy;
-			neurons[l.dst_id].x -= ix;
-			neurons[l.dst_id].y -= iy;
-
-			dx = neurons[l.dst_id].x - neurons[l.src_id].x;
-			dy = neurons[l.dst_id].y - neurons[l.src_id].y;
+			if (l.src_id > b->input_size + b->output_size){
+				neurons[l.src_id].x += ix;
+				neurons[l.src_id].y += iy;
+			}
+			if (l.dst_id > b->input_size + b->output_size){
+				neurons[l.dst_id].x -= ix;
+				neurons[l.dst_id].y -= iy;
+			}
+			//dx = neurons[l.dst_id].x - neurons[l.src_id].x;
+			//dy = neurons[l.dst_id].y - neurons[l.src_id].y;
 		}
 	}
 }
@@ -301,7 +308,7 @@ void draw_neurons(brain_s *b, vis_neuron_s *neurons, uint32_t neurons_number, sf
 		snprintf(str, 32, "%d", neurons[i].inn);
 		sfText_setString(text, str);
 		sfText_setCharacterSize(text, 10); // in pixels, not points!
-		sfText_setFillColor(text, sfRed);
+		sfText_setFillColor(text, sfBlack);
 		sfText_setPosition(text, (sfVector2f){neurons[i].x+2, neurons[i].y+2});
 		sfRenderWindow_drawText(window, text, NULL);
 		if (use_values){
@@ -310,7 +317,7 @@ void draw_neurons(brain_s *b, vis_neuron_s *neurons, uint32_t neurons_number, sf
 			snprintf(str_text, 32, "%0.2f", values[i]);
 			sfText_setString(text, str_text);
 			sfText_setCharacterSize(text, 12); // in pixels, not points!
-			sfText_setFillColor(text, sfRed);
+			sfText_setFillColor(text, sfBlue);
 			sfText_setPosition(text, (sfVector2f){neurons[i].x, neurons[i].y+neuron_radius-6});
 			sfRenderWindow_drawText(window, text, NULL);
 		}
@@ -325,21 +332,16 @@ void draw_neurons(brain_s *b, vis_neuron_s *neurons, uint32_t neurons_number, sf
 void brain_display(brain_s *b, sfRenderWindow *window, int use_values, float *values)
 {
 	int max_size_x = 600, max_size_y = 400;
-	int display_weights = 0;
+	int display_weights = 1;
 	uint32_t neurons_number = b->dict.elements;
 	vis_neuron_s *neurons = calloc(sizeof(vis_neuron_s), neurons_number);
-
-
 
 	init_neurons(b, neurons, neurons_number);
 	set_x(b, neurons, neurons_number, max_size_x);
 	set_y(neurons, neurons_number, max_size_y);
 	x_y_check(neurons, max_size_x, max_size_y, neurons_number);
-
-	dyn_adjust(b, neurons + b->input_size + b-> output_size, neurons_number - b->input_size - b-> output_size);
-
+	dyn_adjust(b, neurons, neurons_number);
 	draw_neurons(b, neurons, neurons_number, window, display_weights, use_values, values);
-
 	free(neurons);
 
 }
@@ -383,11 +385,13 @@ void draw_mike(sfRenderWindow *window, mike_s *m)
 	snprintf(str_text, 32, "%0.2f", cpBodyGetPosition(m->head).y);
 	sfText_setString(text, str_text);
 	sfText_setCharacterSize(text, 12); // in pixels, not points!
-	sfText_setFillColor(text, sfRed);
+	sfText_setFillColor(text, sfBlue);
 	sfText_setPosition(text, (sfVector2f){cpBodyGetPosition(m->head).x, cpBodyGetPosition(m->head).y});
 	sfRenderWindow_drawText(window, text, NULL);
 
 	sfText_destroy(text);
 	sfFont_destroy(arial);
 	sfCircleShape_destroy(head);
+	sfRectangleShape_destroy(upper_leg);
+	sfRectangleShape_destroy(lower_leg);
 }
