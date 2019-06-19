@@ -37,8 +37,8 @@ void mike_spawn(mike_s *m, cpSpace* space, double x, double y);
 //removes mike to the space he is currently in
 void mike_despawn(mike_s *m);
 //puts into output what mike senses. The sizeo of outputs is hard coded. (BAD)
-void mike_brain_inputs(mike_s *m, double *output);
+void mike_brain_inputs(mike_s *m, float *output);
 //how muscles should move
-void mike_muscle_input(mike_s *m, double *input);
+void mike_muscle_input(mike_s *m, float *input);
 //places mike in a still standing position at coordinates x,y
 void mike_reset(mike_s *m, double x, double y);

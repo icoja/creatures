@@ -101,7 +101,7 @@ void set_x(brain_s *b, vis_neuron_s *neurons, uint32_t neurons_number, float max
 		}
 		// altrimenti assegna valore arbitrario
 		if (!found){
-			printf("non ho trovato un src per %d\n", neurons[i].inn);
+			// printf("non ho trovato un src per %d\n", neurons[i].inn);
 			neurons[i].layer = 1;
 		}
 		neurons[i].layer = int_max(1,neurons[i].layer);
@@ -275,7 +275,7 @@ void draw_neurons(brain_s *b, vis_neuron_s *neurons, uint32_t neurons_number, sf
 		sfRenderWindow_drawConvexShape(window, convex, NULL);
 
 		if (display_weights){
-			snprintf(str, 32, "%2.f", l.weight);
+			snprintf(str, 32, "%0.2f", l.weight);
 			//gcvt(l.weight, 2, str);
 			sfText_setString(text, str);
 			sfText_setCharacterSize(text, 10); // in pixels, not points!
@@ -286,6 +286,7 @@ void draw_neurons(brain_s *b, vis_neuron_s *neurons, uint32_t neurons_number, sf
 
 	}
 	sfConvexShape_destroy(convex);
+
 	// draw neurons
 	for (uint32_t i = 0; i < neurons_number; i++){
 		//std::cout << "neuron " << i << " - " << (float) (layer[i]*size_x) / (float) max_layer << ", " << displace[i] << '\n';
@@ -296,24 +297,28 @@ void draw_neurons(brain_s *b, vis_neuron_s *neurons, uint32_t neurons_number, sf
 		sfCircleShape_setOutlineColor(neuron, (sfColor){200,200,200, 255});
 		sfCircleShape_setPosition(neuron, (sfVector2f){neurons[i].x, neurons[i].y});
 		sfRenderWindow_drawCircleShape(window, neuron, NULL);
+		sfCircleShape_destroy(neuron);
 		snprintf(str, 32, "%d", neurons[i].inn);
 		sfText_setString(text, str);
 		sfText_setCharacterSize(text, 10); // in pixels, not points!
-		sfText_setFillColor(text, sfBlack);
+		sfText_setFillColor(text, sfRed);
 		sfText_setPosition(text, (sfVector2f){neurons[i].x+2, neurons[i].y+2});
 		sfRenderWindow_drawText(window, text, NULL);
 		if (use_values){
-			char str_text[10];
+			char str_text[32];
 			//gcvt(values[i], 2, str_text);
-			snprintf(str_text, 32, "%2.f", values[i]);
+			snprintf(str_text, 32, "%0.2f", values[i]);
 			sfText_setString(text, str_text);
 			sfText_setCharacterSize(text, 12); // in pixels, not points!
-			sfText_setFillColor(text, sfBlack);
+			sfText_setFillColor(text, sfRed);
 			sfText_setPosition(text, (sfVector2f){neurons[i].x, neurons[i].y+neuron_radius-6});
 			sfRenderWindow_drawText(window, text, NULL);
 		}
 
 	}
+	sfText_destroy(text);
+	sfFont_destroy(arial);
+
 
 }
 
@@ -324,17 +329,22 @@ void brain_display(brain_s *b, sfRenderWindow *window, int use_values, float *va
 	uint32_t neurons_number = b->dict.elements;
 	vis_neuron_s *neurons = calloc(sizeof(vis_neuron_s), neurons_number);
 
+
+
 	init_neurons(b, neurons, neurons_number);
 	set_x(b, neurons, neurons_number, max_size_x);
 	set_y(neurons, neurons_number, max_size_y);
 	x_y_check(neurons, max_size_x, max_size_y, neurons_number);
-	dyn_adjust(b, neurons, neurons_number);
+
+	dyn_adjust(b, neurons + b->input_size + b-> output_size, neurons_number - b->input_size - b-> output_size);
+
 	draw_neurons(b, neurons, neurons_number, window, display_weights, use_values, values);
 
 	free(neurons);
+
 }
 
-void draw_mike(sfRenderWindow *window, mike_s *m, double target)
+void draw_mike(sfRenderWindow *window, mike_s *m)
 {
 	sfCircleShape *head = sfCircleShape_create();
 	sfCircleShape_setRadius(head, head_radius);
@@ -365,4 +375,19 @@ void draw_mike(sfRenderWindow *window, mike_s *m, double target)
 	sfRectangleShape_setRotation(lower_leg, cpBodyGetAngle(m->rr) / (2 * CP_PI) * 360);
 	sfRenderWindow_drawRectangleShape(window, upper_leg, NULL);
 	sfRenderWindow_drawRectangleShape(window, lower_leg, NULL);
+
+	sfFont *arial = sfFont_createFromFile("arial.ttf");
+	sfText *text = sfText_create();
+	sfText_setFont(text, arial);
+	char str_text[32];
+	snprintf(str_text, 32, "%0.2f", cpBodyGetPosition(m->head).y);
+	sfText_setString(text, str_text);
+	sfText_setCharacterSize(text, 12); // in pixels, not points!
+	sfText_setFillColor(text, sfRed);
+	sfText_setPosition(text, (sfVector2f){cpBodyGetPosition(m->head).x, cpBodyGetPosition(m->head).y});
+	sfRenderWindow_drawText(window, text, NULL);
+
+	sfText_destroy(text);
+	sfFont_destroy(arial);
+	sfCircleShape_destroy(head);
 }

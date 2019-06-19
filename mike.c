@@ -182,10 +182,10 @@ void mike_free(mike_s *m)
 	cpConstraintFree(m->rr_m);
 }
 
-void mike_brain_inputs(mike_s *m, double *output)
+void mike_brain_inputs(mike_s *m, float *output)
 {
 	output[0] =	1;
-	output[1] =	cpBodyGetPosition(m->head).y / 70. - 0.3; //why 0.3?
+	output[1] =	cpBodyGetPosition(m->head).y / 70. - 0.5;
 	output[2] =	(cpBodyGetAngle(m->head) - cpBodyGetAngle(m->l)) / (2 * CP_PI);
 	output[3] =	(cpBodyGetAngle(m->l) - cpBodyGetAngle(m->ll)) / (2 * CP_PI);
 	output[4] =	(cpBodyGetAngle(m->head) - cpBodyGetAngle(m->r)) / (2 * CP_PI);
@@ -197,7 +197,7 @@ void mike_brain_inputs(mike_s *m, double *output)
 	output[10] =	cpBodyGetVelocity(m->head).y/10;
 }
 
-void mike_muscle_input(mike_s *m, double *arr)
+void mike_muscle_input(mike_s *m, float *arr)
 {
 	cpDampedRotarySpringSetRestAngle(m->l_m, (arr[0] + 1) * CP_PI);
 	cpDampedRotarySpringSetRestAngle(m->ll_m, (arr[1] + 1) * CP_PI);

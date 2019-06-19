@@ -23,7 +23,7 @@ void pool_free(pool_s* pool)
 static void evaluate_fitness(pool_s *pool, float (*test)(const brain_s*))
 {
 	for (size_t i = 0; i < pool->size; i++){
-		printf("brain %zu has fitness %f\n", i, test(pool->brains + i));
+		//printf("brain %zu has fitness %f\n", i, test(pool->brains + i));
 		float fitness = test(pool->brains + i);
 		assert(fitness >= 0 && fitness < 1000000000);
 		pool->brains[i].fitness = fitness;
@@ -141,7 +141,7 @@ static void speciation(pool_s *pool)
 }
 
 
-void print_species(pool_s *pool)
+void print_species(const pool_s *pool)
 {
 	printf("species: ci sono %d specie\n", n_species(pool));
 	for (int i = 0; i < n_species(pool); i++){
@@ -196,23 +196,23 @@ void reproduction(pool_s *pool) // TODO seg faulta
 		assert(pool->species(j, 0)); // la specie j ha almeno  1 elemento
 		avg[j] /= pool->species(j, 0);
 		sum_avg += avg[j];
-		printf("la specie %d ha %d elementi e avj %f\n", j, pool->species(j, 0), avg[j]);
+		//printf("la specie %d ha %d elementi e avj %f\n", j, pool->species(j, 0), avg[j]);
 	}
 	uint16_t non_empty_species = j;
 
 	uint16_t i = 0;
 	uint16_t deficit = pool->size; //number brains to add
-	printf("devo aggiugere %d braini\n", deficit);
+	//printf("devo aggiugere %d braini\n", deficit);
 	for (uint16_t j = 0; j < non_empty_species; j++){
 		assert(sum_avg); // TODO non dovrebbe essere un assert, dovrebbe handlare il caso
 		uint16_t offspring = pool->size / sum_avg * avg[j];
-		printf("per la specie %d ne aggiungo %d\n", j, offspring);
+		//printf("per la specie %d ne aggiungo %d\n", j, offspring);
 		if (pool->species(j, 0) == 0) printf("la specie %d è vuota\n", j);
 		for (uint16_t o = 0; o < offspring; o++){
 			int father = 1 + pcg32_random_r(&rng) % pool->species(j, 0);
 			if (o == 1){
-				printf("random brain dalla specie %d:\n", j);
-				print_brain(&pool->brains[pool->species(j, father)]);
+				//printf("random brain dalla specie %d:\n", j);
+				//print_brain(&pool->brains[pool->species(j, father)]);
 			}
 			int mother = 1 + pcg32_random_r(&rng) % pool->species(j, 0);
 			brain_s son = brain_crossover(&pool->brains[pool->species(j, father)], &pool->brains[pool->species(j, mother)]);
