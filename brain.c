@@ -135,6 +135,7 @@ void brain_propagate (const brain_s *b, float *input, float *output)
 	for (size_t i = 0; i < b->input_size; i++){
 		//assert(b->links.data[i].src_id < b->input_size);
 		neurons[i] = input[i];
+		cached[i] = true; // do not sigmoid inputs.
 	}
 
 	// propaga (assumendo l'ordinamento dei links)
@@ -154,12 +155,11 @@ void brain_propagate (const brain_s *b, float *input, float *output)
 		count++; // a che serve ??
 
 	}
-	// gli output non essendo source di nessun neurone sicuramente non sono stati sigmoidati + carica i valori finali nell'array "output":
+	// carica i valori finali nell'array "output"
 	for (size_t i = 0; i < b->output_size; i++){
 		// per convenzione i neuroni di output sono quelli subito dopo i neuroni di input: quindi da input_size a input_size + output_size
-		float res = sigmoid(neurons[b->input_size + i]);
-		assert(!isnan(res));
-		output[i] = res; // diverso dalla versione c++ che non sigmoida l'output
+		assert(!isnan(neurons[b->input_size + i]));
+		output[i] = neurons[b->input_size + i];
 	}
 
 	free(neurons);

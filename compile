@@ -1,1 +1,1 @@
-clang creatures.c brain.c hash_table.c hash_table_64.c visual.c brain_mutations.c -std=c17 -pedantic -Wall -Wextra -Wpedantic -lm -lcsfml-system -lcsfml-graphics -lcsfml-window
+gcc creatures.c brain.c hash_table.c hash_table_64.c visual.c brain_mutations.c pool.c mike.c -std=c11 -pedantic -Wall -Wextra -Wpedantic -lm -lcsfml-system -lcsfml-graphics -lcsfml-window -lchipmunk -fopenmp

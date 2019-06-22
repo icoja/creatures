@@ -66,7 +66,7 @@ void mike_init(mike_s *m)
 void mike_spawn(mike_s *m, cpSpace* space, double x, double y)
 {
 	if(m->space){
-		fprintf(stderr, "mike already spawned in %p, cannot spawn in %p", m->space, space);
+		fprintf(stderr, "mike already spawned in %p, cannot spawn in %p", (void*)m->space, (void*)space);
 		abort();
 	}
 	m->space = space;

@@ -17,12 +17,12 @@ void brain_mutate (brain_s *b)
 
 	// non cambiare l'ordine di esecuzione delle mutazioni (anche se comunque non è troppo grave)
 	float remove_neuron_prob = 0; // n * 4o
-	float split_link_prob = 0.004;
-	float remove_link_prob = 0.02; // mmh meglio non usare
-	float add_link_prob = 0.02;
-	float weight_mut_prob = 0.6;
+	float split_link_prob = 0.04;
+	float remove_link_prob = 0.06; // mmh meglio non usare
+	float add_link_prob = 0.05;
+	float weight_mut_prob = 0.2;
 
-	float weight_mut_range = 1;
+	float weight_mut_range = 3;
 
 	// init
 	float which_mutation_rand = (float)pcg32_random_r(&rng) / UINT32_MAX; // rng definita a inizio file

@@ -209,33 +209,11 @@ void x_y_check(vis_neuron_s *neurons, float max_size_x, float max_size_y, uint32
 
 void dyn_adjust(brain_s *b, vis_neuron_s *neurons, uint32_t neurons_number)
 {
-	uint32_t iterations = 100;
+	uint32_t links_iterations = 1000;
+	uint32_t neurons_iterations = 100;
 	float increment = 0.02;
 
-	for (uint32_t iter = 0; iter < iterations; iter++){
-		for (size_t i = 0; i < neurons_number; i++){
-			for (size_t j = 0; j < neurons_number; j++){
-				float dx = neurons[i].x - neurons[j].x;
-				float dy = neurons[i].y - neurons[j].y;
-				float ix = increment * sigmoid(dx/10);
-				float iy = increment * sigmoid(dy/10);
-				if ((dx*dx + dy*dy) < neurons_spacing * neurons_spacing * 5){ // link too small
-					ix *= -1;
-					iy *= -1;
-				}
-				if (i > b->input_size + b->output_size){
-					neurons[i].x += ix;
-					neurons[i].y += iy;
-				}
-				if (i > b->input_size + b->output_size){
-					neurons[i].x -= ix;
-					neurons[i].y -= iy;
-				}
-
-				//dx = neurons[i].x - neurons[j].x;
-				//dy = neurons[i].y - neurons[j].y;
-			}
-		}
+	for (uint32_t iter = 0; iter < links_iterations; iter++){
 		for (size_t i = 0; i < b->links.size; i++){
 			const link_s l = b->links.data[i];
 			if (l.disabled) continue;
@@ -248,15 +226,40 @@ void dyn_adjust(brain_s *b, vis_neuron_s *neurons, uint32_t neurons_number)
 				iy *= -1;
 			}
 			if (l.src_id > b->input_size + b->output_size){
-				neurons[l.src_id].x += ix;
+				//neurons[l.src_id].x += ix;
 				neurons[l.src_id].y += iy;
 			}
 			if (l.dst_id > b->input_size + b->output_size){
-				neurons[l.dst_id].x -= ix;
+				//neurons[l.dst_id].x -= ix;
 				neurons[l.dst_id].y -= iy;
 			}
 			//dx = neurons[l.dst_id].x - neurons[l.src_id].x;
 			//dy = neurons[l.dst_id].y - neurons[l.src_id].y;
+		}
+	}
+	for (uint32_t iter = 0; iter < neurons_iterations; iter++){
+		for (size_t i = 0; i < neurons_number; i++){
+			for (size_t j = 0; j < neurons_number; j++){
+				float dx = neurons[i].x - neurons[j].x;
+				float dy = neurons[i].y - neurons[j].y;
+				float ix = increment * sigmoid(dx/10);
+				float iy = increment * sigmoid(dy/10);
+				if ((dx*dx + dy*dy) < neurons_spacing * neurons_spacing * 5){ // link too small
+					ix *= -3;
+					iy *= -3;
+				}
+				if (i > b->input_size + b->output_size){
+					//neurons[i].x += ix;
+					neurons[i].y += iy;
+				}
+				if (i > b->input_size + b->output_size){
+					//neurons[i].x -= ix;
+					neurons[i].y -= iy;
+				}
+
+				//dx = neurons[i].x - neurons[j].x;
+				//dy = neurons[i].y - neurons[j].y;
+			}
 		}
 	}
 }

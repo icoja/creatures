@@ -29,7 +29,10 @@ static void evaluate_fitness(pool_s *pool, float (*test)(const brain_s*))
 	for (size_t i = 0; i < pool->size; i++){
 		//printf("brain %zu has fitness %f\n", i, test(pool->brains + i));
 		float fitness = test(pool->brains + i);
-		assert(fitness >= 0 && fitness < 1000000);
+		if(!(fitness >= 0 && fitness < 1000000)){
+			printf("abnormal fitness: %f\n", fitness);
+			assert(0);
+		}
 		pool->brains[i].fitness = fitness;
 
 		if (fitness >= max_fitness){
@@ -194,6 +197,7 @@ static void remove_k_least_fit (const brain_s *brains, uint16_t *specie, uint32_
 
 void reproduction(pool_s *pool) // TODO seg faulta
 {
+	//printf("inizio riproduzione\n");
 	brain_s *new_brains = calloc(sizeof(brain_s), pool->size);
 	float *avg = calloc(sizeof(float), n_species(pool));
 	float sum_avg = 0;
@@ -217,26 +221,36 @@ void reproduction(pool_s *pool) // TODO seg faulta
 	uint16_t deficit = pool->size; //number brains to add
 	//printf("devo aggiugere %d braini\n", deficit);
 	for (uint16_t j = 0; j < non_empty_species; j++){
+		printf("    la specie %d ha avj fitness %f\n", j, avg[j]);
 		assert(sum_avg); // TODO non dovrebbe essere un assert, dovrebbe handlare il caso
 		uint16_t offspring = pool->size / sum_avg * avg[j];
-		//printf("per la specie %d ne aggiungo %d\n", j, offspring);
+		//printf("    per la specie %d ne aggiungo %d\n", j, offspring);
 		if (pool->species(j, 0) == 0) printf("la specie %d è vuota\n", j);
 		for (uint16_t o = 0; o < offspring; o++){
+			printf("         inizio a generare l'offspring %d\n", o);
 			int father = 1 + pcg32_random_r(&rng) % pool->species(j, 0);
+			printf("		trovato il papa\n");
 			if (o == 1){
 				//printf("random brain dalla specie %d:\n", j);
 				//print_brain(&pool->brains[pool->species(j, father)]);
 			}
 			int mother = 1 + pcg32_random_r(&rng) % pool->species(j, 0);
+			printf("		trovata la mamma\n");
 			brain_s son = brain_crossover(&pool->brains[pool->species(j, father)], &pool->brains[pool->species(j, mother)]);
+			printf("		fatto il crossover\n");
 			brain_mutate(&son);
+			printf("		fatta la mutazione\n");
 			assert(i < pool->size);
 			new_brains[i++] = son;
 			deficit--;
+			printf("         fine generazione offspring\n");
+
 
 		}
+		//printf("    specie %d fatta\n", j);
 	}
 
+	//printf("finiti per specie\n");
 
 	// assert(deficit <= n_species(pool)); // perche??
 	for (uint16_t o = 0; o < deficit; o++) {
@@ -246,6 +260,8 @@ void reproduction(pool_s *pool) // TODO seg faulta
 		brain_mutate(&son);
 		new_brains[i++] = son;
 	}
+
+	//printf("finiti i deficit\n");
 
 
 
@@ -257,6 +273,7 @@ void reproduction(pool_s *pool) // TODO seg faulta
 	free(pool->brains);
 	free(avg);
 	pool->brains = new_brains;
+	//printf("fine riproduzione\n");
 }
 
 void print_pool(const pool_s *pool)

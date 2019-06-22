@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include <math.h>
+#include <unistd.h>
 #include "brain.h"
 #include "visual.h"
 #include "pool.h"
@@ -67,7 +68,7 @@ float test(const brain_s *b){
 
 	//printf("test end\n");
 
-	float h = cpBodyGetPosition(mike.head).y;
+	float h = cpBodyGetPosition(mike.head).x;
 
 	mike_free(&mike);
 
@@ -77,76 +78,6 @@ float test(const brain_s *b){
 
 	return h;
 }
-
-int short_demo()
-{
-	brain_warmup();
-	brain_mutations_warmup();
-
-	mike_s mike;
-	mike_init(&mike);
-
-	sfContextSettings settings = {0};
-	settings.antialiasingLevel = 8;
-	int xres = 900, yres = 600;
-	sfRenderWindow *window = sfRenderWindow_create((sfVideoMode){xres, yres, 32}, "creatures", sfResize | sfClose, &settings);
-	sfView *view = sfView_createFromRect((sfFloatRect){0, (float)yres, (float)xres, (float)-yres});
-	sfRenderWindow_setView(window, view);
-
-
-	cpVect gravity = cpv(0, -100);
-
-	// Create an empty space.
-	cpSpace *space = cpSpaceNew();
-	cpSpaceSetGravity(space, gravity);
-
-	// Add a static line segment shape for the ground.
-	// We'll make it slightly tilted so the ball will roll off.
-	// We attach it to a static body to tell Chipmunk it shouldn't be movable.
-	cpShape *ground = cpSegmentShapeNew(cpSpaceGetStaticBody(space), cpv(-99, 0), cpv(xres+99, 0), 0);
-	cpShapeSetFriction(ground, 1);
-	cpSpaceAddShape(space, ground);
-
-
-
-	mike_spawn(&mike, space, 300, 100);
-
-
-	cpFloat timeStep = 1.0/60.0;
-	for(cpFloat time = 0; time < 20; time += timeStep){
-		sfRenderWindow_clear(window, sfBlack);
-		cpSpaceStep(space, timeStep);
-		draw_mike(window, &mike);
-		sfRenderWindow_display(window);
-
-	}
-
-
-	int pool_size = 100;
-
-	pool_s pool;
-	pool_init(&pool, pool_size);
-	for (int i = 0; i < pool_size; i++){
-		brain_s b;
-		brain_init(&b, 2, 1);
-		b.fitness = 0;
-		pool.brains[i] = b;
-
-	}
-
-	for (int i = 0; i < 4; i++){
-		evolve(&pool, test);
-	}
-
-
-
-	print_pool(&pool);
-
-
-	cpShapeFree(ground);
-	return 0;
-}
-
 
 int main()
 {
@@ -161,7 +92,7 @@ int main()
 	sfRenderWindow_setView(window, view);
 
 	pool_s pool;
-	int pool_size = 80;
+	int pool_size = 100;
 	pool_init(&pool, pool_size);
 	for (int i = 0; i < pool_size; i++){
 		brain_s b;
@@ -187,7 +118,20 @@ int main()
 			brain_s best;
 			evolve(&pool, test);
 			printf("gen numb: %d", i);
-			int show_every = 250;
+			int show_brain_every = 10000000;
+			if (i%show_brain_every == (show_brain_every - 1)){
+				printf("showing brains: ");
+				for (int b = 0; b < pool.size; b++){
+					printf("%d ", b);
+					fflush(stdout);
+					sfRenderWindow_clear(window, sfBlack);
+					brain_display(pool.brains + b, window, 0, NULL);
+					sfRenderWindow_display(window);
+					usleep(20000);
+				}
+				printf("\n");
+			}
+			int show_every = 50;
 			if (i%show_every == (show_every - 1)){
 				cpVect gravity = cpv(0, -100);
 				cpSpace *space = cpSpaceNew();
@@ -195,30 +139,33 @@ int main()
 				cpShape *ground = cpSegmentShapeNew(cpSpaceGetStaticBody(space), cpv(-99, 0), cpv(xres+99, 0), 0);
 				cpShapeSetFriction(ground, 1);
 				cpSpaceAddShape(space, ground);
-				mike_s mike;
-				mike_init(&mike);
-				mike_spawn(&mike, space, 400, 75);
-				brain_s b = pool.brains[33];
 				cpFloat timeStep = 1.0/20.0;
-				float input[12];
-				float output[4];
-				float vis[100000]; // max number of neurons
+				for (int s = 0; s < n_species(&pool); s++){
+					if (!(pool.species.data[s * (pool.size + 1)])) continue; // spcies is empty
+					mike_s mike;
+					mike_init(&mike);
+					mike_spawn(&mike, space, 400, 75);
+					brain_s b = pool.brains[pool.species.data[s * (pool.size + 1) + 1]];
+					float input[12];
+					float output[4];
+					float vis[100000]; // max number of neurons
 
-				for(cpFloat time = 0; time < 4; time += timeStep){
-					sfRenderWindow_clear(window, sfBlack);
-					mike_brain_inputs(&mike, input);
-					assert(b.dict.elements < 100000);
-					brain_propagate_vis(&b, input, output, vis);
-					mike_muscle_input(&mike, output);
-					cpSpaceStep(space, timeStep);
-					draw_mike(window, &mike);
-					//printf("prima di chiamare brain display\n");
-					brain_display(&b, window, 1, vis);
-					//printf("dopo di chiamare brain display\n");
-					sfRenderWindow_display(window);
+					for(cpFloat time = 0; time < 20; time += timeStep){
+						sfRenderWindow_clear(window, sfBlack);
+						mike_brain_inputs(&mike, input);
+						assert(b.dict.elements < 100000);
+						brain_propagate_vis(&b, input, output, vis);
+						mike_muscle_input(&mike, output);
+						cpSpaceStep(space, timeStep);
+						draw_mike(window, &mike);
+						//printf("prima di chiamare brain display\n");
+						brain_display(&b, window, 1, vis);
+						//printf("dopo di chiamare brain display\n");
+						sfRenderWindow_display(window);
+					}
+
+					mike_free(&mike);
 				}
-
-				mike_free(&mike);
 				cpShapeFree(ground);
 
 			}
