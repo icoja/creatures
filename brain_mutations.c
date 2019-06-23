@@ -174,12 +174,13 @@ brain_s brain_crossover(const brain_s *mother, const brain_s *father)
 			unsigned int disabled_prob = (current_lessfit.disabled * UINT32_MAX / 2 +
 				current_fittest.disabled * UINT32_MAX / 2);
 			bool shoud_be_disabled = pcg32_random_r(&rng) < disabled_prob;
-			brain_add_link_full(&new_brain, current_fittest.src, current_fittest.dst, new_weight, shoud_be_disabled); // perche & ?? (anche nella linea del else) // un po inefficente forse visto che il link gia esiste fatto
 
+			brain_add_link_full(&new_brain, current_fittest.src, current_fittest.dst, new_weight, shoud_be_disabled); // perche & ?? (anche nella linea del else) // un po inefficente forse visto che il link gia esiste fatto
 
 			// (3) quelli che ha solo il fittest vengono preservati
 		} else{
 			brain_add_link(&new_brain, current_fittest.src, current_fittest.dst, current_fittest.weight); // un po inefficente forse visto che il link gia esiste fatto
+
 		}
 	}
 
@@ -195,7 +196,6 @@ brain_s brain_crossover(const brain_s *mother, const brain_s *father)
 		print_brain(&new_brain);
 		assert(0);
 	}
-
 
 	return new_brain;
 }

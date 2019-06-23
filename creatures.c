@@ -150,7 +150,7 @@ int main()
 					float output[4];
 					float vis[100000]; // max number of neurons
 
-					for(cpFloat time = 0; time < 20; time += timeStep){
+					for(cpFloat time = 0; time < 4; time += timeStep){
 						sfRenderWindow_clear(window, sfBlack);
 						mike_brain_inputs(&mike, input);
 						assert(b.dict.elements < 100000);

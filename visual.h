@@ -1,4 +1,4 @@
-#pragma once
+        #pragma once
 
 #include <SFML/Graphics.h>
 #include "brain.h"

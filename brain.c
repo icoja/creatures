@@ -34,8 +34,8 @@ void print_brain (const brain_s *b)
 	printf("BRAIN:\n");
 	printf("input size: %d, output size: %d\n", b->input_size, b->output_size);
 	printf("fitness: %f\n", b->fitness);
-	printf("hash entries: ");
-	for(size_t i = 0; i < b->dict.elements; i++){
+	printf("hash entries: (elements: %d, size: %d)", b->dict.elements, b->dict.size);
+	for(size_t i = 0; i < b->dict.size; i++){
 		bucket *u = b->dict.table + i;
 		while(u){
 			for(size_t j = 0; j < BUCKET_SIZE; j++){
@@ -46,7 +46,7 @@ void print_brain (const brain_s *b)
 			u = u->next;
 		}
 	}
-	printf("\nlinks:\n");
+	printf("\nlinks (%d):\n", b->links.size);
 	print_links(b);
 
 }
@@ -105,9 +105,13 @@ void brain_init (brain_s *b, uint32_t in_count, uint32_t out_count)
 	assert(out_count < MAX_OUTPUT_NEURONS);
 
 	for (uint32_t i = 0; i < in_count; i++){
+		uint32_t * null = 0;
+		assert(!hash_table_search(&b->dict, i, null));
 		hash_table_insert_new(&b->dict, i, i);
 	}
 	for (uint32_t i = 0; i < out_count; i++){
+		uint32_t * null = 0;
+		assert(!hash_table_search(&b->dict,  MAX_INPUT_NEURONS + i, null));
 		hash_table_insert_new(&b->dict, MAX_INPUT_NEURONS + i, b->input_size + i);
 	}
 }
@@ -262,6 +266,8 @@ bool brain_add_link_full (brain_s *b, uint32_t src, uint32_t dst, float weight, 
 			return 0;
 		}
 	}
+
+
 	link_s l;
 
 	l.src = src;
@@ -272,6 +278,8 @@ bool brain_add_link_full (brain_s *b, uint32_t src, uint32_t dst, float weight, 
 
 	if (!hash_table64_search(&links_hash, make_key64(src, dst), &l.innov_number)){
 		l.innov_number = brain_innov_number++;
+		uint32_t * null = 0;
+		assert(!hash_table64_search(&links_hash, make_key64(src, dst), null));
 		hash_table64_insert_new(&links_hash, make_key64(src, dst), l.innov_number);
 	}
 
@@ -281,12 +289,16 @@ bool brain_add_link_full (brain_s *b, uint32_t src, uint32_t dst, float weight, 
 	assert(hash_table_search(&(b->dict), src, NULL));
 
 	if (!hash_table_search(&(b->dict), src, &l.src_id)){
+		uint32_t * null = 0;
+		assert(!hash_table_search(&(b->dict), src, null));
 		hash_table_insert_new(&(b->dict), src, (uint32_t)b->dict.elements);
 	}
 	//l.src_id = dict[src];
 	int new_in_hash = 0;
 	if (!hash_table_search(&(b->dict), dst, &l.dst_id)){
 		l.dst_id = (uint32_t)b->dict.elements;
+		uint32_t * null = 0;
+		assert(!hash_table_search(&(b->dict), dst, null));
 		hash_table_insert_new(&(b->dict), dst, l.dst_id);
 	}
 	//assert(hash_table_search(&(b->dict), dst, NULL));
@@ -301,7 +313,10 @@ bool brain_add_link_full (brain_s *b, uint32_t src, uint32_t dst, float weight, 
 		assert(0);
 	}
 
-	vector_link_s_insert(&b->links, new_link_index, l);
+	//printf("sto insertando all'indice %d il link ", new_link_index);
+	//print_link(&l);
+	//printf("la lunghezza dei links è %d\n", b->links.size);
+	//vector_link_s_insert(&b->links, new_link_index, l);
 
 	if (check_brain(b) != BRAIN_OK){
 		printf("brain sbagliato: errore %d\n", check_brain(b));

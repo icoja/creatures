@@ -221,29 +221,29 @@ void reproduction(pool_s *pool) // TODO seg faulta
 	uint16_t deficit = pool->size; //number brains to add
 	//printf("devo aggiugere %d braini\n", deficit);
 	for (uint16_t j = 0; j < non_empty_species; j++){
-		printf("    la specie %d ha avj fitness %f\n", j, avg[j]);
+		//printf("    la specie %d ha avj fitness %f\n", j, avg[j]);
 		assert(sum_avg); // TODO non dovrebbe essere un assert, dovrebbe handlare il caso
 		uint16_t offspring = pool->size / sum_avg * avg[j];
 		//printf("    per la specie %d ne aggiungo %d\n", j, offspring);
 		if (pool->species(j, 0) == 0) printf("la specie %d è vuota\n", j);
 		for (uint16_t o = 0; o < offspring; o++){
-			printf("         inizio a generare l'offspring %d\n", o);
+			//printf("         inizio a generare l'offspring %d\n", o);
 			int father = 1 + pcg32_random_r(&rng) % pool->species(j, 0);
-			printf("		trovato il papa\n");
+			//printf("		trovato il papa\n");
 			if (o == 1){
 				//printf("random brain dalla specie %d:\n", j);
 				//print_brain(&pool->brains[pool->species(j, father)]);
 			}
 			int mother = 1 + pcg32_random_r(&rng) % pool->species(j, 0);
-			printf("		trovata la mamma\n");
+			//printf("		trovata la mamma\n");
 			brain_s son = brain_crossover(&pool->brains[pool->species(j, father)], &pool->brains[pool->species(j, mother)]);
-			printf("		fatto il crossover\n");
+			//printf("		fatto il crossover\n");
 			brain_mutate(&son);
-			printf("		fatta la mutazione\n");
+			//printf("		fatta la mutazione\n");
 			assert(i < pool->size);
 			new_brains[i++] = son;
 			deficit--;
-			printf("         fine generazione offspring\n");
+			//printf("         fine generazione offspring\n");
 
 
 		}
