@@ -80,7 +80,7 @@
 		}\
 	}\
 	static inline void vector_##type##_insert(vector_##type *vec, size_t offset, const type t){\
-		vector_##type##_push_back(vec, vec->data[vec->size - 1]);\
+		if(++(vec->size) > vec->capacity) vector_##type##_resize(vec);\
 		for (size_t i = vec->size - 1; i > offset; i--){\
 			vec->data[i] = vec->data[i - 1];\
 		}\

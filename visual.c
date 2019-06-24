@@ -365,4 +365,11 @@ void draw_mike(sfRenderWindow *window, mike_s *m, double target)
 	sfRectangleShape_setRotation(lower_leg, cpBodyGetAngle(m->rr) / (2 * CP_PI) * 360);
 	sfRenderWindow_drawRectangleShape(window, upper_leg, NULL);
 	sfRenderWindow_drawRectangleShape(window, lower_leg, NULL);
+<<<<<<< HEAD
+=======
+	
+	sfRectangleShape_destroy(upper_leg);
+	sfRectangleShape_destroy(lower_leg);
+	sfCircleShape_destroy(head);
+>>>>>>> 7a8520ce3180454fcb723790c701a6899efb2316
 }
