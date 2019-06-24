@@ -105,13 +105,11 @@ void brain_init (brain_s *b, uint32_t in_count, uint32_t out_count)
 	assert(out_count < MAX_OUTPUT_NEURONS);
 
 	for (uint32_t i = 0; i < in_count; i++){
-		uint32_t * null = 0;
-		assert(!hash_table_search(&b->dict, i, null));
+		assert(!hash_table_search(&b->dict, i, NULL));
 		hash_table_insert_new(&b->dict, i, i);
 	}
 	for (uint32_t i = 0; i < out_count; i++){
-		uint32_t * null = 0;
-		assert(!hash_table_search(&b->dict,  MAX_INPUT_NEURONS + i, null));
+		assert(!hash_table_search(&b->dict,  MAX_INPUT_NEURONS + i, NULL));
 		hash_table_insert_new(&b->dict, MAX_INPUT_NEURONS + i, b->input_size + i);
 	}
 }
@@ -278,8 +276,7 @@ bool brain_add_link_full (brain_s *b, uint32_t src, uint32_t dst, float weight, 
 
 	if (!hash_table64_search(&links_hash, make_key64(src, dst), &l.innov_number)){
 		l.innov_number = brain_innov_number++;
-		uint32_t * null = 0;
-		assert(!hash_table64_search(&links_hash, make_key64(src, dst), null));
+		assert(!hash_table64_search(&links_hash, make_key64(src, dst), NULL));
 		hash_table64_insert_new(&links_hash, make_key64(src, dst), l.innov_number);
 	}
 
@@ -289,16 +286,14 @@ bool brain_add_link_full (brain_s *b, uint32_t src, uint32_t dst, float weight, 
 	assert(hash_table_search(&(b->dict), src, NULL));
 
 	if (!hash_table_search(&(b->dict), src, &l.src_id)){
-		uint32_t * null = 0;
-		assert(!hash_table_search(&(b->dict), src, null));
+		assert(!hash_table_search(&(b->dict), src, NULL));
 		hash_table_insert_new(&(b->dict), src, (uint32_t)b->dict.elements);
 	}
 	//l.src_id = dict[src];
 	int new_in_hash = 0;
 	if (!hash_table_search(&(b->dict), dst, &l.dst_id)){
 		l.dst_id = (uint32_t)b->dict.elements;
-		uint32_t * null = 0;
-		assert(!hash_table_search(&(b->dict), dst, null));
+		assert(!hash_table_search(&(b->dict), dst, NULL));
 		hash_table_insert_new(&(b->dict), dst, l.dst_id);
 	}
 	//assert(hash_table_search(&(b->dict), dst, NULL));

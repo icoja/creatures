@@ -1,4 +1,4 @@
-#include <math.h>
+﻿#include <math.h>
 #include "visual.h"
 
 #define neurons_spacing 54
