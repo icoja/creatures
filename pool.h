@@ -3,7 +3,7 @@
 #include "brain_mutations.h"
 #include "vector.h"
 
-#define dist_threshold 10 // 5 è buono
+#define dist_threshold 20 // 5 è buono
 #define remove_bottom_perc 0.5 // valid interval: (0,1)
 
 typedef uint16_t u16;

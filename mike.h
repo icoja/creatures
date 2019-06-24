@@ -16,10 +16,10 @@ static const float lower_leg_density = 0.1;
 static const float head_density = 0.1;
 static const float friction = 0.8;
 static const float bounciness = 0.1;
-static const float upper_joint_stiffness = 18000 * 3;
-static const float lower_joint_stiffness = 18000 * 3;
-static const float upper_joint_damping = 60000 * 2;
-static const float lower_joint_damping = 60000 * 2;
+static const float upper_joint_stiffness = 18000;
+static const float lower_joint_stiffness = 18000;
+static const float upper_joint_damping = 60000;
+static const float lower_joint_damping = 60000;
 
 typedef struct mike{
 	cpBody *head, *l, *r, *ll, *rr;

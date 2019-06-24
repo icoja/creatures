@@ -62,7 +62,6 @@ float test(const brain_s *b){
 		mike_muscle_input(&mike, output);
 
 		//printf("\n    current head height: %f\n", cpBodyGetPosition(mike.head).y);
-
 		cpSpaceStep(space, timeStep);
 	}
 
@@ -76,7 +75,7 @@ float test(const brain_s *b){
 
 	//printf("fine test\n");
 
-	return h;
+	return fmax(1,h);
 }
 
 int main()
@@ -118,7 +117,7 @@ int main()
 			brain_s best;
 			evolve(&pool, test);
 			printf("gen numb: %d", i);
-			int show_brain_every = 200;
+			int show_brain_every = 20000000;
 			if (i%show_brain_every == (show_brain_every - 1)){
 				printf("showing brains: ");
 				for (int b = 0; b < pool.size; b++){
@@ -131,7 +130,7 @@ int main()
 				}
 				printf("\n");
 			}
-			int show_every = 200;
+			int show_every = 100;
 			if (i%show_every == (show_every - 1)){
 				cpVect gravity = cpv(0, -100);
 				cpSpace *space = cpSpaceNew();
@@ -158,11 +157,10 @@ int main()
 						mike_muscle_input(&mike, output);
 						cpSpaceStep(space, timeStep);
 						draw_mike(window, &mike);
-						//printf("prima di chiamare brain display\n");
 						brain_display(&b, window, 1, vis);
-						//printf("dopo di chiamare brain display\n");
 						sfRenderWindow_display(window);
 					}
+					printf("test fitness: %f\n", cpBodyGetPosition(mike.head).x);
 
 					mike_free(&mike);
 				}

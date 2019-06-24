@@ -61,6 +61,7 @@ void brain_free(brain_s *b);
 void brain_init (brain_s *b, uint32_t in_count, uint32_t out_count);
 void brain_propagate (const brain_s *b, float *input, float *output);
 void brain_propagate_vis (const brain_s *b, float *input, float *output, float *acc);
+void brain_propagate_vis_old (const brain_s *b, float *input, float *output, float *acc);
 void brain_mutate ();
 void brain_split_link (brain_s *b, uint32_t l);
 bool brain_add_link_full (brain_s *b, uint32_t src, uint32_t dst, float weight, bool disabled);
