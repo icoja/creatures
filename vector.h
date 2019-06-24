@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#define VECTOR_MIN_CAPACITY 64
+#define VECTOR_MIN_CAPACITY 1
 #define DEFINE_VECTOR_TYPE(type) \
 	typedef struct{\
 		type *data;\
