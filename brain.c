@@ -313,6 +313,7 @@ bool brain_add_link_full (brain_s *b, uint32_t src, uint32_t dst, float weight, 
 		assert(0);
 	}
 
+	vector_link_s_insert(&b->links, new_link_index, l);
 	//printf("sto insertando all'indice %d il link ", new_link_index);
 	//print_link(&l);
 	//printf("la lunghezza dei links è %d\n", b->links.size);

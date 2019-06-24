@@ -118,7 +118,7 @@ int main()
 			brain_s best;
 			evolve(&pool, test);
 			printf("gen numb: %d", i);
-			int show_brain_every = 10000000;
+			int show_brain_every = 200;
 			if (i%show_brain_every == (show_brain_every - 1)){
 				printf("showing brains: ");
 				for (int b = 0; b < pool.size; b++){
@@ -131,7 +131,7 @@ int main()
 				}
 				printf("\n");
 			}
-			int show_every = 50;
+			int show_every = 200;
 			if (i%show_every == (show_every - 1)){
 				cpVect gravity = cpv(0, -100);
 				cpSpace *space = cpSpaceNew();
