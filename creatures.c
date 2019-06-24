@@ -43,7 +43,7 @@ float test(const brain_s *b){
 
 	cpVect gravity = cpv(0, -100);
 	cpSpaceSetGravity(space, gravity);
-	cpShape *ground = cpSegmentShapeNew(cpSpaceGetStaticBody(space), cpv(-99, 0), cpv(900+99, 0), 0);
+	cpShape *ground = cpSegmentShapeNew(cpSpaceGetStaticBody(space), cpv(-100, 0), cpv(11000, 0), 0);
 	cpShapeSetFriction(ground, 1);
 	cpSpaceAddShape(space, ground);
 
@@ -95,7 +95,7 @@ int main()
 	pool_init(&pool, pool_size);
 	for (int i = 0; i < pool_size; i++){
 		brain_s b;
-		brain_init(&b, 12, 4);
+		brain_init(&b, 10, 4);
 		b.fitness = 1;
 		pool.brains[i] = b;
 

@@ -20,9 +20,11 @@ void brain_mutate (brain_s *b)
 	float split_link_prob = 0.04;
 	float remove_link_prob = 0.06; // mmh meglio non usare
 	float add_link_prob = 0.05;
-	float weight_mut_prob = 0.2;
+	float small_weight_mut_prob = 0.6;
+	float big_weight_mut_prob = 0.18;
 
-	float weight_mut_range = 3;
+	float small_weight_mut_range = 0.9;
+	float big_weight_mut_range = 4;
 
 	// init
 	float which_mutation_rand = (float)pcg32_random_r(&rng) / UINT32_MAX; // rng definita a inizio file
@@ -86,15 +88,25 @@ void brain_mutate (brain_s *b)
 	interval_start += add_link_prob;
 
 
-	// weight mutation
-	interval_end += weight_mut_prob;
+	// small weight mutation
+	interval_end += small_weight_mut_prob;
 	if (which_mutation_rand > interval_start && which_mutation_rand < interval_end && b->links.size != 0){
 
 		int link_index_rand = pcg32_random_r(&rng) % b->links.size;
-		float rand_increment = ((float) pcg32_random_r(&rng) / UINT32_MAX - 0.5) * weight_mut_range;
+		float rand_increment = ((float) pcg32_random_r(&rng) / UINT32_MAX - 0.5) * small_weight_mut_range;
 		b->links.data[link_index_rand].weight += rand_increment;
 	}
-	interval_start += weight_mut_prob;
+	interval_start += small_weight_mut_prob;
+
+	// big weight mutation
+	interval_end += big_weight_mut_prob;
+	if (which_mutation_rand > interval_start && which_mutation_rand < interval_end && b->links.size != 0){
+
+		int link_index_rand = pcg32_random_r(&rng) % b->links.size;
+		float rand_increment = ((float) pcg32_random_r(&rng) / UINT32_MAX - 0.5) * big_weight_mut_range;
+		b->links.data[link_index_rand].weight += rand_increment;
+	}
+	interval_start += big_weight_mut_prob;
 
 	assert(check_brain(b) == BRAIN_OK);
 }

@@ -184,17 +184,17 @@ void mike_free(mike_s *m)
 
 void mike_brain_inputs(mike_s *m, float *output)
 {
-	output[0] =	1;
-	output[1] =	cpBodyGetPosition(m->head).y / 70. - 0.5;
-	output[2] =	(cpBodyGetAngle(m->head) - cpBodyGetAngle(m->l)) / (2 * CP_PI);
-	output[3] =	(cpBodyGetAngle(m->l) - cpBodyGetAngle(m->ll)) / (2 * CP_PI);
-	output[4] =	(cpBodyGetAngle(m->head) - cpBodyGetAngle(m->r)) / (2 * CP_PI);
-	output[5] =	(cpBodyGetAngle(m->r) - cpBodyGetAngle(m->rr)) / (2 * CP_PI);
-	output[6] =	cpBodyGetAngle(m->head) / (2 * CP_PI);
-	output[7] =	(float)(cpShapeGetBB(m->ll_s).b < 6.);
-	output[8] =	(float)(cpShapeGetBB(m->rr_s).b < 6.);
-	output[9] =	cpBodyGetVelocity(m->head).x/10;
-	output[10] =	cpBodyGetVelocity(m->head).y/10;
+	output[0] =	1 * 2;
+	output[1] =	(cpBodyGetPosition(m->head).y / 70. - 0.5 )* 2;
+	output[2] =	(cpBodyGetAngle(m->head) - cpBodyGetAngle(m->l)) / (2 * CP_PI) * 2;
+	output[3] =	(cpBodyGetAngle(m->l) - cpBodyGetAngle(m->ll)) / (2 * CP_PI) * 2;
+	output[4] =	(cpBodyGetAngle(m->head) - cpBodyGetAngle(m->r)) / (2 * CP_PI) * 2;
+	output[5] =	(cpBodyGetAngle(m->r) - cpBodyGetAngle(m->rr)) / (2 * CP_PI) * 2;
+	output[6] =	cpBodyGetAngle(m->head) / (2 * CP_PI) * 2;
+	//output[7] =	(float)(cpShapeGetBB(m->ll_s).b < 6.) * 2;
+	//output[8] =	(float)(cpShapeGetBB(m->rr_s).b < 6.) * 2;
+	output[7] =	cpBodyGetVelocity(m->head).x/10 * 2;
+	output[8] =	cpBodyGetVelocity(m->head).y/10 * 2;
 }
 
 void mike_muscle_input(mike_s *m, float *arr)
