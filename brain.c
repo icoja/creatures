@@ -183,7 +183,7 @@ void brain_propagate_vis (const brain_s *b, float *input, float *output, float *
 		cached[i] = true; // do not sigmoid inputs.
 	}
 
-	// printf("preparato tutto per propagare\n"); // debug
+	 //printf("preparato tutto per propagare\n"); // debug
 	// propaga (assumendo l'ordinamento dei links)
 	// per ogni link
 	for (size_t  i = 0; i < b->links.size; i++){
@@ -198,7 +198,7 @@ void brain_propagate_vis (const brain_s *b, float *input, float *output, float *
 
 		neurons[l.dst_id] += l.weight * neurons[l.src_id];
 	}
-	// printf("sigmoida gli input\n"); // debug
+	 //printf("sigmoida gli input\n"); // debug
 	// carica i valori finali nell'array "output"
 	for (size_t i = 0; i < b->output_size; i++){
 		// per convenzione i neuroni di output sono quelli subito dopo i neuroni di input: quindi da input_size a input_size + output_size
@@ -208,17 +208,19 @@ void brain_propagate_vis (const brain_s *b, float *input, float *output, float *
 		output[i] = neurons[b->input_size + i];
 	}
 
-	// printf("copia tutto in acc\n"); // debug
+	 //printf("copia tutto in acc\n"); // debug
 
-	for (size_t i = 0; i < b->dict.elements || i < 100000; i++){
+	for (size_t i = 0; i < b->dict.elements && i < 100000; i++){
+		//printf("%d ", i);
 		acc[i] = neurons[i];
 	}
+	//printf("\n");
 	////////////////////////////////////////////////////////////////////////
-	// printf("freea neuroni\n"); // debug
+	//printf("freea neuroni\n"); // debug
 	free(neurons);
-	// printf("freea cached\n"); // debug
+	//printf("freea cached\n"); // debug
 	free(cached);
-	// printf("fine prop vis\n"); // debug
+	//printf("fine prop vis\n"); // debug
 }
 
 

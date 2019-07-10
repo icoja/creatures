@@ -81,7 +81,7 @@
 	}\
 	static inline void vector_##type##_insert(vector_##type *vec, size_t offset, const type t){\
 		if(++(vec->size) > vec->capacity){\
-		vector->data = realloc(vec->data, sizeof(type) * vec->capacity * 2);\
+		vec->data = realloc(vec->data, sizeof(type) * vec->capacity * 2);\
 		vec->capacity *= 2;\
 		}\
 		for (size_t i = vec->size - 1; i > offset; i--){\

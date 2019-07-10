@@ -53,7 +53,7 @@ float test(const brain_s *b){
 
 
 	cpFloat timeStep = 1.0/20.0;
-	cpFloat test_time = 10.;
+	cpFloat test_time = 12.;
 	//printf("test begin\n");
 	float fitness = 0;
 	for(cpFloat time = 0; time < test_time; time += timeStep){
@@ -137,7 +137,7 @@ int main()
 				printf("\n");
 			}
 
-			//int show_every = 100;
+			int show_every = 20;
 			//if (i%show_every == (show_every - 1)){
 			if (current_fitness - last_shown_fitness > 30 && current_fitness > 450){
 				// printf("initialize world\n"); // debug
@@ -160,13 +160,14 @@ int main()
 					float vis[100000]; // max number of neurons
 					// printf("	initialize world\n"); // debug
 
-					for(cpFloat time = 0; time < 10; time += timeStep){
+					for(cpFloat time = 0; time < 16; time += timeStep){
 						sfRenderWindow_clear(window, sfBlack);
 						// printf("		get inputs\n"); // debug
 						mike_brain_inputs(&mike, input);
 						assert(b.dict.elements < 100000);
 						// printf("		prpopagate vis\n"); // debug
 						brain_propagate_vis(&b, input, output, vis);
+						// printf("		fine prop vis\n"); // debug
 						// printf("		move mike\n"); // debug
 						mike_muscle_input(&mike, output);
 						// printf("		step world\n"); // debug
@@ -179,6 +180,7 @@ int main()
 						brain_display(&b, window, 1, vis);
 						sfRenderWindow_display(window);
 						// printf("		end frame\n"); // debug
+						if (cpBodyGetPosition(mike.head).y < 30) break;
 
 					}
 					printf("test fitness: %f\n", cpBodyGetPosition(mike.head).x);
