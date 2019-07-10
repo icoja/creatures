@@ -34,7 +34,7 @@ void print_brain (const brain_s *b)
 	printf("BRAIN:\n");
 	printf("input size: %d, output size: %d\n", b->input_size, b->output_size);
 	printf("fitness: %f\n", b->fitness);
-	printf("hash entries: (elements: %d, size: %d)", b->dict.elements, b->dict.size);
+	printf("hash entries: (elements: %ld, size: %ld)", b->dict.elements, b->dict.size);
 	for(size_t i = 0; i < b->dict.size; i++){
 		bucket *u = b->dict.table + i;
 		while(u){
@@ -46,7 +46,7 @@ void print_brain (const brain_s *b)
 			u = u->next;
 		}
 	}
-	printf("\nlinks (%d):\n", b->links.size);
+	printf("\nlinks (%ld):\n", b->links.size);
 	print_links(b);
 
 }
@@ -161,7 +161,7 @@ void brain_propagate (const brain_s *b, float *input, float *output)
 	for (size_t i = 0; i < b->output_size; i++){
 		// per convenzione i neuroni di output sono quelli subito dopo i neuroni di input: quindi da input_size a input_size + output_size
 		assert(!isnan(neurons[b->input_size + i]));
-		output[i] = neurons[b->input_size + i];
+		output[i] = sigmoid(neurons[b->input_size + i]);
 	}
 
 	free(neurons);
@@ -183,8 +183,8 @@ void brain_propagate_vis (const brain_s *b, float *input, float *output, float *
 		cached[i] = true; // do not sigmoid inputs.
 	}
 
+	// printf("preparato tutto per propagare\n"); // debug
 	// propaga (assumendo l'ordinamento dei links)
-	uint32_t count = 0; // a che serve??
 	// per ogni link
 	for (size_t  i = 0; i < b->links.size; i++){
 		const link_s l = b->links.data[i];
@@ -197,75 +197,30 @@ void brain_propagate_vis (const brain_s *b, float *input, float *output, float *
 		}
 
 		neurons[l.dst_id] += l.weight * neurons[l.src_id];
-		count++; // a che serve ??
-
 	}
+	// printf("sigmoida gli input\n"); // debug
 	// carica i valori finali nell'array "output"
 	for (size_t i = 0; i < b->output_size; i++){
 		// per convenzione i neuroni di output sono quelli subito dopo i neuroni di input: quindi da input_size a input_size + output_size
 		assert(!isnan(neurons[b->input_size + i]));
+	////////////////////////// unica differenza con brain_propagate qui ////////////
+		neurons[b->input_size + i] = sigmoid(neurons[b->input_size + i]);
 		output[i] = neurons[b->input_size + i];
 	}
 
-	////////////////////////// unica differenza con brain_propagate qui ////////////
+	// printf("copia tutto in acc\n"); // debug
+
 	for (size_t i = 0; i < b->dict.elements || i < 100000; i++){
 		acc[i] = neurons[i];
 	}
 	////////////////////////////////////////////////////////////////////////
-
+	// printf("freea neuroni\n"); // debug
 	free(neurons);
+	// printf("freea cached\n"); // debug
 	free(cached);
+	// printf("fine prop vis\n"); // debug
 }
 
-
-void brain_propagate_vis_old (const brain_s *b, float *input, float *output, float *acc)
-{
-	// questa funzione deve essere sempre uguale a brain_propagate tranne per le righe evidenziate
-	float *neurons = calloc(sizeof(float), b->dict.elements);
-	bool *cached = calloc(sizeof(bool), b->dict.elements);
-
-	assert(neurons);
-	assert(cached);
-
-	// carica l'input nei neuroni di input
-	for (size_t i = 0; i < b->input_size; i++){
-		//assert(b->links.data[i].src_id < b->input_size);
-		neurons[i] = input[i];
-	}
-
-	// propaga (assumendo l'ordinamento dei links)
-	uint32_t count = 0; // a che serve??
-	// per ogni link
-	for (size_t  i = 0; i < b->links.size; i++){
-		const link_s l = b->links.data[i];
-		// ignora se diablato
-		if (l.disabled) continue;
-		// se il source non è mai stato usato, quindi non gli è stata ancora applicata la sigmoide
-		if (!cached[l.src_id]){
-			cached[l.src_id] = true;
-			neurons[l.src_id] = sigmoid(neurons[l.src_id]);
-		}
-
-		neurons[l.dst_id] += l.weight * neurons[l.src_id];
-		count++; // a che serve ??
-
-	}
-	// gli output non essendo source di nessun neurone sicuramente non sono stati sigmoidati + carica i valori finali nell'array "output":
-	for (size_t i = 0; i < b->output_size; i++){
-		// per convenzione i neuroni di output sono quelli subito dopo i neuroni di input: quindi da input_size a input_size + output_size
-		float res = sigmoid(neurons[b->input_size + i]);
-		assert(!isnan(res));
-		output[i] = res; // diverso dalla versione c++ che non sigmoida l'output
-	}
-	////////////////////////// unica differenza con brain_propagate qui ////////////
-	//for (size_t i = 0; i < b->dict.elements || i < 100000; i++){
-	//	acc[i] = neurons[i];
-	//}
-	////////////////////////////////////////////////////////////////////////
-
-	free(neurons);
-	free(cached);
-}
 
 bool brain_add_link_full (brain_s *b, uint32_t src, uint32_t dst, float weight, bool disabled) // ogni (o qualche) volta che returna 0 il programma aborta
 {

@@ -20,10 +20,10 @@ void pool_free(pool_s* pool)
 	vector_u16_free(&pool->species);
 }
 
-static void evaluate_fitness(pool_s *pool, float (*test)(const brain_s*))
+float evaluate_fitness(pool_s *pool, float (*test)(const brain_s*))
 {
 	float max_fitness = 0;
-	uint32_t best_indx = 0;
+	//uint32_t best_indx = 0;
 	float avj_fitness = 0;
 	#pragma omp parallel for
 	for (size_t i = 0; i < pool->size; i++){
@@ -37,12 +37,13 @@ static void evaluate_fitness(pool_s *pool, float (*test)(const brain_s*))
 
 		if (fitness >= max_fitness){
 			max_fitness = fitness;
-			best_indx = i;
+			//best_indx = i;
 		}
 		avj_fitness += fitness;
 	}
 	avj_fitness /= pool->size;
 	printf("max fitness: %f, avj: %f\n", max_fitness, avj_fitness);
+	return avj_fitness;
 
 }
 
@@ -283,16 +284,17 @@ void print_pool(const pool_s *pool)
 #undef species
 
 
-void evolve(pool_s *pool, float (*test)(const brain_s*))
+float evolve(pool_s *pool, float (*test)(const brain_s*))
 {
-	//printf("%s\n", "-----------inizio evoluzione-------------");
-	//printf("%s\n", "---------calcolo fitness");
-	evaluate_fitness(pool, test);
-	//printf("%s\n", "---------specio");
+	// printf("%s\n", "-----------inizio evoluzione-------------");  // debug
+	// printf("%s\n", "---------calcolo fitness"); // debug
+	float avj = evaluate_fitness(pool, test);
+	// printf("%s\n", "---------specio"); // debug
 	speciation(pool);
-	//printf("%s\n", "---------riproduzione");
+	// printf("%s\n", "---------riproduzione"); // debug
 	reproduction(pool);
-	//printf("%s\n", "--------------fime evoluzione---------------");
+	// printf("%s\n", "--------------fime evoluzione---------------"); // debug
+	return avj;
 }
 
 

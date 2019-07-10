@@ -26,4 +26,4 @@ void pool_free(pool_s* pool);
 uint16_t n_species(const pool_s *pool); // era una static inline
 brain_s best(const pool_s *pool);
 
-void evolve(pool_s *pool, float (*test)(const brain_s*));
+float evolve(pool_s *pool, float (*test)(const brain_s*));

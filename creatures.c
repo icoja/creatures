@@ -1,6 +1,5 @@
 #include <unistd.h>
 #include <math.h>
-#include <unistd.h>
 #include "brain.h"
 #include "visual.h"
 #include "pool.h"
@@ -13,7 +12,7 @@ pcg32_random_t rng= {0, 0};
 static inline float small_test(const brain_s *b){
 	float input[2] = {1, 1};
 	float output;
-	float fitness = 4;
+	//float fitness = 4;
 
 	/*
 	for (size_t i = 0; i < 4; i++) {
@@ -54,8 +53,10 @@ float test(const brain_s *b){
 
 
 	cpFloat timeStep = 1.0/20.0;
+	cpFloat test_time = 10.;
 	//printf("test begin\n");
-	for(cpFloat time = 0; time < 4; time += timeStep){
+	float fitness = 0;
+	for(cpFloat time = 0; time < test_time; time += timeStep){
 
 		mike_brain_inputs(&mike, input);
 		brain_propagate(b, input, output);
@@ -63,11 +64,13 @@ float test(const brain_s *b){
 
 		//printf("\n    current head height: %f\n", cpBodyGetPosition(mike.head).y);
 		cpSpaceStep(space, timeStep);
+
+		//fitness = fmax(fitness, cpBodyGetPosition(mike.head).y);
+		fitness += cpBodyGetPosition(mike.head).x / (test_time / timeStep);
 	}
 
 	//printf("test end\n");
 
-	float h = cpBodyGetPosition(mike.head).x;
 
 	mike_free(&mike);
 
@@ -75,7 +78,7 @@ float test(const brain_s *b){
 
 	//printf("fine test\n");
 
-	return fmax(1,h);
+	return fmax(1, fitness);
 }
 
 int main()
@@ -103,6 +106,7 @@ int main()
 
 	int i = 0;
 	int gen_numb = 10000000;
+	float last_shown_fitness = 0, current_fitness = 0;
 	while (sfRenderWindow_isOpen(window))
 	{
 		sfEvent event;
@@ -114,9 +118,11 @@ int main()
 		sfRenderWindow_clear(window, sfBlack);
 
 		if (i < gen_numb){
-			brain_s best;
-			evolve(&pool, test);
+			float avj = evolve(&pool, test);
 			printf("gen numb: %d", i);
+
+			current_fitness = avj;
+
 			int show_brain_every = 20000000;
 			if (i%show_brain_every == (show_brain_every - 1)){
 				printf("showing brains: ");
@@ -130,8 +136,11 @@ int main()
 				}
 				printf("\n");
 			}
-			int show_every = 100;
-			if (i%show_every == (show_every - 1)){
+
+			//int show_every = 100;
+			//if (i%show_every == (show_every - 1)){
+			if (current_fitness - last_shown_fitness > 30 && current_fitness > 450){
+				// printf("initialize world\n"); // debug
 				cpVect gravity = cpv(0, -100);
 				cpSpace *space = cpSpaceNew();
 				cpSpaceSetGravity(space, gravity);
@@ -139,6 +148,7 @@ int main()
 				cpShapeSetFriction(ground, 1);
 				cpSpaceAddShape(space, ground);
 				cpFloat timeStep = 1.0/20.0;
+				// printf("start draw loop\n"); // debug
 				for (int s = 0; s < n_species(&pool); s++){
 					if (!(pool.species.data[s * (pool.size + 1)])) continue; // spcies is empty
 					mike_s mike;
@@ -148,35 +158,40 @@ int main()
 					float input[12];
 					float output[4];
 					float vis[100000]; // max number of neurons
+					// printf("	initialize world\n"); // debug
 
-					for(cpFloat time = 0; time < 4; time += timeStep){
+					for(cpFloat time = 0; time < 10; time += timeStep){
 						sfRenderWindow_clear(window, sfBlack);
+						// printf("		get inputs\n"); // debug
 						mike_brain_inputs(&mike, input);
 						assert(b.dict.elements < 100000);
+						// printf("		prpopagate vis\n"); // debug
 						brain_propagate_vis(&b, input, output, vis);
+						// printf("		move mike\n"); // debug
 						mike_muscle_input(&mike, output);
+						// printf("		step world\n"); // debug
 						cpSpaceStep(space, timeStep);
+						// printf("		draw gost\n"); // debug
+						draw_gost_mike(window, &mike, output);
+						// printf("		draw mike\n"); // debug
 						draw_mike(window, &mike);
+						// printf("		display world\n"); // debug
 						brain_display(&b, window, 1, vis);
 						sfRenderWindow_display(window);
+						// printf("		end frame\n"); // debug
+
 					}
 					printf("test fitness: %f\n", cpBodyGetPosition(mike.head).x);
 
 					mike_free(&mike);
+					// printf("	end sim specie\n"); // debug
+
 				}
 				cpShapeFree(ground);
+				last_shown_fitness = current_fitness;
+				// printf("end all display\n"); // debug
 
 			}
-			// sleep(1);
-		} else if (i == gen_numb) {
-			for (int j = 0; j < pool_size; j++){
-				printf("fitness: %f ", test(pool.brains + j));
-				printf("number of links: %zu \n", (pool.brains[j]).links.size);
-			}
-			print_links(&pool.brains[0]);
-			printf("done\n");
-		} else {
-			return 0;
 		}
 		i++;
 	}

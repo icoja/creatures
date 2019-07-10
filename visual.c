@@ -317,6 +317,7 @@ void draw_neurons(brain_s *b, vis_neuron_s *neurons, uint32_t neurons_number, sf
 		if (use_values){
 			char str_text[32];
 			//gcvt(values[i], 2, str_text);
+
 			snprintf(str_text, 32, "%0.2f", values[i]);
 			sfText_setString(text, str_text);
 			sfText_setCharacterSize(text, 12); // in pixels, not points!
@@ -363,21 +364,35 @@ void draw_mike(sfRenderWindow *window, mike_s *m)
 	sfRectangleShape *lower_leg = sfRectangleShape_create();
 	sfRectangleShape_setSize(upper_leg, (sfVector2f){upper_leg_thickness, upper_leg_length});
 	sfRectangleShape_setSize(lower_leg, (sfVector2f){lower_leg_thickness, lower_leg_length});
-	sfRectangleShape_setOrigin(upper_leg, (sfVector2f){upper_leg_thickness/2., upper_leg_length/2.});
-	sfRectangleShape_setOrigin(lower_leg, (sfVector2f){lower_leg_thickness/2., lower_leg_length/2.});
-	sfRectangleShape_setPosition(upper_leg, (sfVector2f){cpBodyGetPosition(m->l).x, cpBodyGetPosition(m->l).y});
-	sfRectangleShape_setPosition(lower_leg, (sfVector2f){cpBodyGetPosition(m->ll).x, cpBodyGetPosition(m->ll).y});
+	sfRectangleShape_setOrigin(upper_leg, (sfVector2f){upper_leg_thickness/2., 0});
+	sfRectangleShape_setOrigin(lower_leg, (sfVector2f){lower_leg_thickness/2., 0});
+	float lx = cpBodyGetPosition(m->head).x - cos(cpBodyGetAngle(m->head)) * (head_radius + upper_leg_thickness / 2);
+	float ly = cpBodyGetPosition(m->head).y - sin(cpBodyGetAngle(m->head)) * (head_radius + upper_leg_thickness / 2);
+	sfRectangleShape_setPosition(upper_leg, (sfVector2f){lx, ly});
+	float llx = lx + sin(cpBodyGetAngle(m->l)) * upper_leg_length;
+	float lly = ly - cos(cpBodyGetAngle(m->l)) * upper_leg_length;
+	sfRectangleShape_setPosition(lower_leg, (sfVector2f){llx, lly});
+	sfRectangleShape_setRotation(upper_leg, (cpBodyGetAngle(m->l) + CP_PI) / (2 * CP_PI) * 360); //(cpBodyGetAngle(m->head) + brain_output[0] * CP_PI) / (2 * CP_PI) * 360);
+	sfRectangleShape_setRotation(lower_leg, (cpBodyGetAngle(m->ll) + CP_PI) / (2 * CP_PI) * 360); //(cpBodyGetAngle(m->l) + brain_output[1] * CP_PI) / (2 * CP_PI) * 360);
 
-	sfRectangleShape_setRotation(upper_leg, cpBodyGetAngle(m->l) / (2 * CP_PI) * 360);
-	sfRectangleShape_setRotation(lower_leg, cpBodyGetAngle(m->ll) / (2 * CP_PI) * 360);
+	sfRectangleShape_setFillColor(upper_leg, sfWhite);
+	sfRectangleShape_setFillColor(lower_leg, sfWhite);
 
 	sfRenderWindow_drawRectangleShape(window, upper_leg, NULL);
 	sfRenderWindow_drawRectangleShape(window, lower_leg, NULL);
 
-	sfRectangleShape_setPosition(upper_leg, (sfVector2f){cpBodyGetPosition(m->r).x, cpBodyGetPosition(m->r).y});
-	sfRectangleShape_setPosition(lower_leg, (sfVector2f){cpBodyGetPosition(m->rr).x, cpBodyGetPosition(m->rr).y});
-	sfRectangleShape_setRotation(upper_leg, cpBodyGetAngle(m->r) / (2 * CP_PI) * 360);
-	sfRectangleShape_setRotation(lower_leg, cpBodyGetAngle(m->rr) / (2 * CP_PI) * 360);
+	float rx = cpBodyGetPosition(m->head).x + cos(cpBodyGetAngle(m->head)) * (head_radius + upper_leg_thickness / 2);
+	float ry = cpBodyGetPosition(m->head).y + sin(cpBodyGetAngle(m->head)) * (head_radius + upper_leg_thickness / 2);
+	sfRectangleShape_setPosition(upper_leg, (sfVector2f){rx, ry});
+	float rrx = rx + sin(cpBodyGetAngle(m->r)) * upper_leg_length;
+	float rry = ry - cos(cpBodyGetAngle(m->r)) * upper_leg_length;
+	sfRectangleShape_setPosition(lower_leg, (sfVector2f){rrx, rry});
+	sfRectangleShape_setRotation(upper_leg, (cpBodyGetAngle(m->r) + CP_PI) / (2 * CP_PI) * 360); //(cpBodyGetAngle(m->head) + brain_output[0] * CP_PI) / (2 * CP_PI) * 360);
+	sfRectangleShape_setRotation(lower_leg, (cpBodyGetAngle(m->rr) + CP_PI) / (2 * CP_PI) * 360); //(cpBodyGetAngle(m->l) + brain_output[1] * CP_PI) / (2 * CP_PI) * 360);
+
+	sfRectangleShape_setFillColor(upper_leg, sfWhite);
+	sfRectangleShape_setFillColor(lower_leg, sfWhite);
+
 	sfRenderWindow_drawRectangleShape(window, upper_leg, NULL);
 	sfRenderWindow_drawRectangleShape(window, lower_leg, NULL);
 
@@ -394,6 +409,61 @@ void draw_mike(sfRenderWindow *window, mike_s *m)
 
 	sfText_destroy(text);
 	sfFont_destroy(arial);
+	sfCircleShape_destroy(head);
+	sfRectangleShape_destroy(upper_leg);
+	sfRectangleShape_destroy(lower_leg);
+}
+
+
+void draw_gost_mike(sfRenderWindow *window, mike_s *m, float *brain_output)
+{
+	sfColor transparent_color = {(int) 255, (int) 255, (int) 255, (int) 150};
+
+	sfCircleShape *head = sfCircleShape_create();
+	sfCircleShape_setRadius(head, head_radius);
+	sfCircleShape_setOrigin(head, (sfVector2f){head_radius, head_radius});
+	sfCircleShape_setPosition(head, (sfVector2f){cpBodyGetPosition(m->head).x, cpBodyGetPosition(m->head).y});
+	sfCircleShape_setFillColor(head, transparent_color);
+	//head.setPosition(cpBodyGetPosition(m.head).x, cpBodyGetPosition(m.head).y);
+	//window.draw(head);
+	sfRenderWindow_drawCircleShape(window, head, NULL);
+	// debug target loc
+	sfRectangleShape *upper_leg = sfRectangleShape_create();
+	sfRectangleShape *lower_leg = sfRectangleShape_create();
+	sfRectangleShape_setSize(upper_leg, (sfVector2f){upper_leg_thickness, upper_leg_length});
+	sfRectangleShape_setSize(lower_leg, (sfVector2f){lower_leg_thickness, lower_leg_length});
+	sfRectangleShape_setOrigin(upper_leg, (sfVector2f){upper_leg_thickness/2., 0});
+	sfRectangleShape_setOrigin(lower_leg, (sfVector2f){lower_leg_thickness/2., 0});
+	float lx = cpBodyGetPosition(m->head).x - cos(cpBodyGetAngle(m->head)) * (head_radius + upper_leg_thickness / 2);
+	float ly = cpBodyGetPosition(m->head).y - sin(cpBodyGetAngle(m->head)) * (head_radius + upper_leg_thickness / 2);
+	sfRectangleShape_setPosition(upper_leg, (sfVector2f){lx, ly});
+	float llx = lx + sin(brain_output[0]) * upper_leg_length;
+	float lly = ly - cos(brain_output[0]) * upper_leg_length;
+	sfRectangleShape_setPosition(lower_leg, (sfVector2f){llx, lly});
+	sfRectangleShape_setRotation(upper_leg, (brain_output[0] + CP_PI) / (2 * CP_PI) * 360); //(cpBodyGetAngle(m->head) + brain_output[0] * CP_PI) / (2 * CP_PI) * 360);
+	sfRectangleShape_setRotation(lower_leg, (brain_output[1] + CP_PI) / (2 * CP_PI) * 360); //(cpBodyGetAngle(m->l) + brain_output[1] * CP_PI) / (2 * CP_PI) * 360);
+
+	sfRectangleShape_setFillColor(upper_leg, transparent_color);
+	sfRectangleShape_setFillColor(lower_leg, transparent_color);
+
+	sfRenderWindow_drawRectangleShape(window, upper_leg, NULL);
+	sfRenderWindow_drawRectangleShape(window, lower_leg, NULL);
+
+	float rx = cpBodyGetPosition(m->head).x + cos(cpBodyGetAngle(m->head)) * (head_radius + upper_leg_thickness / 2);
+	float ry = cpBodyGetPosition(m->head).y + sin(cpBodyGetAngle(m->head)) * (head_radius + upper_leg_thickness / 2);
+	sfRectangleShape_setPosition(upper_leg, (sfVector2f){rx, ry});
+	float rrx = rx + sin(brain_output[2]) * upper_leg_length;
+	float rry = ry - cos(brain_output[2]) * upper_leg_length;
+	sfRectangleShape_setPosition(lower_leg, (sfVector2f){rrx, rry});
+	sfRectangleShape_setRotation(upper_leg, (brain_output[2] + CP_PI) / (2 * CP_PI) * 360); //(cpBodyGetAngle(m->head) + brain_output[0] * CP_PI) / (2 * CP_PI) * 360);
+	sfRectangleShape_setRotation(lower_leg, (brain_output[3] + CP_PI) / (2 * CP_PI) * 360); //(cpBodyGetAngle(m->l) + brain_output[1] * CP_PI) / (2 * CP_PI) * 360);
+
+	sfRectangleShape_setFillColor(upper_leg, transparent_color);
+	sfRectangleShape_setFillColor(lower_leg, transparent_color);
+
+	sfRenderWindow_drawRectangleShape(window, upper_leg, NULL);
+	sfRenderWindow_drawRectangleShape(window, lower_leg, NULL);
+
 	sfCircleShape_destroy(head);
 	sfRectangleShape_destroy(upper_leg);
 	sfRectangleShape_destroy(lower_leg);

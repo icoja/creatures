@@ -1,6 +1,7 @@
 #include "mike.h"
 #include <math.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <stdio.h>
 
 #define MIKE_COLLISION_GROUP 16
@@ -190,6 +191,10 @@ void mike_brain_inputs(mike_s *m, float *output)
 	output[3] =	(cpBodyGetAngle(m->l) - cpBodyGetAngle(m->ll)) / (2 * CP_PI) * 2;
 	output[4] =	(cpBodyGetAngle(m->head) - cpBodyGetAngle(m->r)) / (2 * CP_PI) * 2;
 	output[5] =	(cpBodyGetAngle(m->r) - cpBodyGetAngle(m->rr)) / (2 * CP_PI) * 2;
+	//assert(output[5] <= 1 && output[5] >= -1);
+	//assert(output[4] <= 1 && output[4] >= -1);
+	//assert(output[3] <= 1 && output[3] >= -1);
+	//assert(output[2] <= 1 && output[2] >= -1);
 	output[6] =	cpBodyGetAngle(m->head) / (2 * CP_PI) * 2;
 	//output[7] =	(float)(cpShapeGetBB(m->ll_s).b < 6.) * 2;
 	//output[8] =	(float)(cpShapeGetBB(m->rr_s).b < 6.) * 2;
@@ -199,8 +204,12 @@ void mike_brain_inputs(mike_s *m, float *output)
 
 void mike_muscle_input(mike_s *m, float *arr)
 {
-	cpDampedRotarySpringSetRestAngle(m->l_m, (arr[0] + 1) * CP_PI);
-	cpDampedRotarySpringSetRestAngle(m->ll_m, (arr[1] + 1) * CP_PI);
-	cpDampedRotarySpringSetRestAngle(m->r_m, (arr[2] + 1) * CP_PI);
-	cpDampedRotarySpringSetRestAngle(m->rr_m, (arr[3] + 1) * CP_PI);
+	//assert(arr[0] >= -1 && arr[0] <= 1);
+	//assert(arr[1] >= -1 && arr[1] <= 1);
+	//assert(arr[2] >= -1 && arr[2] <= 1);
+	//assert(arr[3] >= -1 && arr[3] <= 1);
+	cpDampedRotarySpringSetRestAngle(m->l_m, arr[0] * CP_PI);
+	cpDampedRotarySpringSetRestAngle(m->ll_m, arr[1] * CP_PI);
+	cpDampedRotarySpringSetRestAngle(m->r_m, arr[2] * CP_PI);
+	cpDampedRotarySpringSetRestAngle(m->rr_m, arr[3] * CP_PI);
 }
