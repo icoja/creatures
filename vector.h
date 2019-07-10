@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#define VECTOR_MIN_CAPACITY 64
+#define VECTOR_MIN_CAPACITY 1
 #define DEFINE_VECTOR_TYPE(type) \
 	typedef struct{\
 		type *data;\
@@ -49,8 +49,8 @@
 		vec->data[vec->size++] = elem;\
 	}\
 	\
-	static inline void vector_##type##_resize(vector_##type *vec){\
-		while(vec->capacity >= 2*vec->size) vec->capacity = vec->capacity >> 1;\
+	static inline void vector_##type##_shrink(vector_##type *vec){\
+		while(vec->capacity >= 2*vec->size) vec->capacity = vec->capacity / 2 ? vec->capacity / 2 : 1;\
 		vec->data = realloc(vec->data, sizeof(type) * vec->capacity);\
 	}\
 	static inline void vector_##type##_freeze(vector_##type *vec){\
@@ -80,7 +80,10 @@
 		}\
 	}\
 	static inline void vector_##type##_insert(vector_##type *vec, size_t offset, const type t){\
-		if(++(vec->size) > vec->capacity) vector_##type##_resize(vec);\
+		if(++(vec->size) > vec->capacity){\
+		vector->data = realloc(vec->data, sizeof(type) * vec->capacity * 2);\
+		vec->capacity *= 2;\
+		}\
 		for (size_t i = vec->size - 1; i > offset; i--){\
 			vec->data[i] = vec->data[i - 1];\
 		}\
